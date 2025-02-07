@@ -1,14 +1,28 @@
-const express = require("express");
-const authCheck = require("./middleware/auth");
+require("dotenv").config();
+const logger = require("./services/log/logger")
+const database = require("./services/database")
+const app = require("./app")
 
-const app = express();
+const envValidator = require("./config/config")
 
-app.use(authCheck);
+logger.info("Checking configuration...")
+envValidator.validateServerConfiguration()
+envValidator.validateDatabaseConfiguration()
+envValidator.validateAuthConfiguration()
 
-app.get("/", (req, res) => {
-    res.send("Hello World");
-});
+logger.info("Deploying server...")
 
-app.listen(3000, () => {
-    console.log("Server is running on port 3000");
-});
+database.connect()
+    .then(() => {
+        logger.info("Database succesfully connected")
+
+        const PORT = process.env.BACK_PORT
+        const backUri = `http://${process.env.BACK_HOST}:${PORT}`
+        
+        app.listen(PORT, () => {
+            logger.info(`Server running on ${backUri}`)
+        })
+    
+    }).catch((err) => {
+        logger.error(err)
+    })

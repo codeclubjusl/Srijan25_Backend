@@ -1,189 +1,391 @@
 const express = require("express");
 const router = express.Router();
-const Event = require("../models/Event");
-const User = require("../models/User");
-const { Group } = require("../models/Groups");
+const isAdmin = require("../middlewares/isAdmin");
+const {
+    getEventBySlug,
+    getParticipantsForEvent,
+    getPendingParticipantGroupsForEvent,
+    getParticipantGroupsForEvent,
+    createNewEvent,
+    deleteEventById,
+    addUserToParticipantList,
+    addPendingGroupToEvent,
+    removeUserFromParticipantList,
+    removePendingGroupFromEvent,
+    removeGroupFromEvent,
+    addGroupToEvent,
+} = require("../services/database/events");
+const { default: mongoose } = require("mongoose");
+const {
+    addRegisteredEventToUser,
+    addPendingEventToUser,
+    removeRegisteredEventFromUser,
+} = require("../services/database/users");
+const {
+    createGroup,
+    getGroupByLeaderAndEvent,
+} = require("../services/database/groups");
 
-// GET all events
-router.get("/", (req, res) => {
-    Event.find()
-        .then((events) => {
-            res.json(events);
-        })
-        .catch((err) => {
-            res.status(400).send(err);
-        });
+router.get("/", async (req, res) => {
+    res.json({ message: "Events route" });
 });
-
-// GET a specific event
-router.get("/:id", (req, res) => {
-    Event.findById(req.params.id)
-        .then((event) => {
-            res.json(event);
-        })
-        .catch((err) => {
-            res.status(400).send(err);
-        });
-});
-
 // POST a new event
-router.post("/", (req, res) => {
-    const event = new Event(req.body);
-    event
-        .save()
-        .then((event) => {
-            res.json(event);
-        })
-        .catch((err) => {
-            res.status(400).send(err);
+router.post("/new", async (req, res) => {
+    try {
+        const { name, description, isSolo, minParticipants, maxParticipants } =
+            req.body;
+        if (
+            !name ||
+            !description ||
+            !minParticipants ||
+            !maxParticipants ||
+            isSolo == undefined ||
+            isSolo == null
+        ) {
+            return res.status(400).send({
+                success: false,
+                message:
+                    "All fields { name, description, isSolo, minParticipants, maxParticipants } are required for creating new event.",
+            });
+        }
+        if (isSolo && minParticipants != 1 && maxParticipants != 1) {
+            return res.status(400).send({
+                success: false,
+                message:
+                    "For solo events, min and max participants should be 1.",
+            });
+        }
+        const { success, data: event } = await createNewEvent(
+            name,
+            description,
+            isSolo,
+            minParticipants,
+            maxParticipants
+        );
+        return res.status(201).send({ success, data: event });
+    } catch (error) {
+        console.error("Error creating new event:", error);
+        return res.status(400).send({
+            success: false,
+            message:
+                error.message || "An error occurred while creating new event.",
         });
-});
-
-// PUT update an event
-router.put("/:id", (req, res) => {
-    Event.findByIdAndUpdate(req.params.id, req.body, {
-        new: true,
-    })
-        .then((event) => {
-            res.json(event);
-        })
-        .catch((err) => {
-            res.status(400).send(err);
-        });
+    }
 });
 
 // DELETE an event
-router.delete("/:id", (req, res) => {
-    Event.findByIdAndDelete(req.params.id)
-        .then((event) => {
-            res.json(event);
-        })
-        .catch((err) => {
-            res.status(400).send(err);
+router.delete("/delete/:slug", async (req, res) => {
+    try {
+        const { data: event } = await getEventBySlug(req.params.slug);
+        const { success, message } = await deleteEventById(event._id);
+        return res.status(200).send({ success, message });
+    } catch (error) {
+        console.error("Error deleting event:", error);
+        return res.status(400).send({
+            success: false,
+            message: error.message || "An error occurred while deleting event.",
         });
+    }
+});
+
+// GET a specific event
+router.get("/:slug", async (req, res) => {
+    try {
+        const { success, data: event } = await getEventBySlug(req.params.slug);
+        return res.status(200).send({ success, data: event });
+    } catch (error) {
+        console.error("Error getting event by slug:", error);
+        return res.status(400).send({
+            success: false,
+            message:
+                error.message ||
+                "An error occurred while getting event by slug.",
+        });
+    }
+});
+
+router.get("/:slug/getParticipants", async (req, res) => {
+    try {
+        const { data: event } = await getEventBySlug(req.params.slug);
+        const { success, data: participants } = await getParticipantsForEvent(
+            event._id
+        );
+        return res.status(200).send({ success, data: participants });
+    } catch (error) {
+        console.error("Error getting participants for event:", error);
+        return res.status(400).send({
+            success: false,
+            message:
+                error.message ||
+                "An error occurred while getting participants.",
+        });
+    }
+});
+
+router.get("/:slug/getParticipantGroups", async (req, res) => {
+    try {
+        const { data: event } = await getEventBySlug(req.params.slug);
+        const { success, data: groups } = await getParticipantGroupsForEvent(
+            event._id
+        );
+        return res.status(200).send({ success, data: groups });
+    } catch (error) {
+        console.error("Error getting participant groups for event:", error);
+        return res.status(400).send({
+            success: false,
+            message:
+                error.message ||
+                "An error occurred while getting participant groups.",
+        });
+    }
+});
+
+router.get("/:slug/getPendingParticipantGroups", async (req, res) => {
+    try {
+        const { data: event } = await getEventBySlug(req.params.slug);
+        const { success, data: groups } =
+            await getPendingParticipantGroupsForEvent(event._id);
+        return res.status(200).send({ success, data: groups });
+    } catch (error) {
+        console.error(
+            "Error getting pending participant groups for event:",
+            error
+        );
+        return res.status(400).send({
+            success: false,
+            message:
+                error.message ||
+                "An error occurred while getting pending participant groups.",
+        });
+    }
 });
 
 // POST a participant to an event
-router.post("/:id/participants", (req, res) => {
-    Event.findById(req.params.id)
-        .then((event) => {
-            if (req.body.isGroup) {
-                Group.findById(req.body.group)
-                    .then((group) => {
-                        event.participants.push({
-                            isSolo: req.body.isGroup,
-                            group: group._id,
-                        });
-                        event
-                            .save()
-                            .then((event) => {
-                                res.json(event);
-                            })
-                            .catch((err) => {
-                                res.status(400).send(err);
-                            });
-                        group.events.push(event._id);
-                        group
-                            .save()
-                            .then((group) => {
-                                res.json(group);
-                            })
-                            .catch((err) => {
-                                res.status(400).send(err);
-                            });
-                    })
-                    .catch((err) => {
-                        res.status(400).send(err);
-                    });
+router.post("/:slug/register", async (req, res) => {
+    try {
+        const { data: event } = await getEventBySlug(req.params.slug);
+        if (!event) {
+            return res.status(404).send({
+                success: false,
+                message: "Event not found.",
+            });
+        }
+        const isSolo = event.isSolo;
+        const { userId, membersEmails, groupName } = req.body;
+
+        if (!userId) {
+            return res.status(400).send({
+                success: false,
+                message: "User ID is required for registering.",
+            });
+        }
+
+        if (isSolo && membersEmails) {
+            return res.status(400).send({
+                success: false,
+                message: "Members emails are not required for solo events.",
+            });
+        }
+
+        if (!isSolo && !membersEmails) {
+            return res.status(400).send({
+                success: false,
+                message: "Members emails are required for group events.",
+            });
+        }
+
+        if (
+            !(membersEmails.length < event.minParticipants - 1) &&
+            membersEmails.length > event.maxParticipants - 1
+        ) {
+            return res.status(400).send({
+                success: false,
+                message:
+                    "Number of members should be between min and max participants.",
+            });
+        }
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        if (isSolo) {
+            await addUserToParticipantList(event._id, userId, session, true);
+            await addRegisteredEventToUser(userId, event._id, session, true);
+
+            await session.commitTransaction();
+            session.endSession();
+
+            return res.status(200).send({
+                success: true,
+                message: `Participant (${userId}) registered successfully to event: ${event.name}`,
+            });
+        } else {
+            let { data: group } = await createGroup(
+                userId,
+                membersEmails,
+                groupName,
+                event._id,
+                session,
+                true
+            );
+            if (group.status == "complete") {
+                await addGroupToEvent(event._id, group._id, session, true);
+
+                await addRegisteredEventToUser(
+                    userId,
+                    event._id,
+                    session,
+                    true
+                );
+            } else {
+                await addPendingGroupToEvent(
+                    event._id,
+                    group._id,
+                    session,
+                    true
+                );
+
+                await addPendingEventToUser(userId, event._id, session, true);
+                for (const member of group.members) {
+                    await addPendingEventToUser(
+                        member.user,
+                        event._id,
+                        session,
+                        true
+                    );
+                }
             }
-            if (!req.body.isGroup && req.body.solo) {
-                User.findById(req.body.solo)
-                    .then((user) => {
-                        event.participants.push({
-                            isSolo: req.body.isSolo,
-                            solo: user._id,
-                        });
-                        event
-                            .save()
-                            .then((event) => {
-                                res.json(event);
-                            })
-                            .catch((err) => {
-                                res.status(400).send(err);
-                            });
-                        user.events.push({
-                            event: event._id,
-                            isSolo: true,
-                        });
-                        user.save()
-                            .then((user) => {
-                                res.json(user);
-                            })
-                            .catch((err) => {
-                                res.status(400).send(err);
-                            });
-                    })
-                    .catch((err) => {
-                        res.status(400).send(err);
-                    });
-            }
-        })
-        .catch((err) => {
-            res.status(400).send(err);
+            await session.commitTransaction();
+            session.endSession();
+            return res.status(200).send({
+                success: true,
+                message: `Group (${resp.data._id}) registered successfully to event: ${event.name}`,
+            });
+        }
+    } catch (error) {
+        console.error("Error registering participant for event:", error);
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).send({
+            success: false,
+            message:
+                error.message ||
+                "An error occurred while registering participant.",
         });
+    }
 });
 
-// DELETE a participant from an event
-router.delete("/:id/participants/:participantId", (req, res) => {
-    Event.findById(req.params.id)
-        .then((event) => {
-            const participant = event.participants.id(req.params.participantId);
-            if (participant.isSolo) {
-                User.findById(participant.solo)
-                    .then((user) => {
-                        user.events.pull(event._id);
-                        user.save()
-                            .then((user) => {
-                                res.json(user);
-                            })
-                            .catch((err) => {
-                                res.status(400).send(err);
-                            });
-                    })
-                    .catch((err) => {
-                        res.status(400).send(err);
-                    });
-            }
-            if (!participant.isSolo) {
-                Group.findById(participant.group)
-                    .then((group) => {
-                        group.events.pull(event._id);
-                        group
-                            .save()
-                            .then((group) => {
-                                res.json(group);
-                            })
-                            .catch((err) => {
-                                res.status(400).send(err);
-                            });
-                    })
-                    .catch((err) => {
-                        res.status(400).send(err);
-                    });
-            }
-            event.participants.pull(participant._id);
-            event
-                .save()
-                .then((event) => {
-                    res.json(event);
-                })
-                .catch((err) => {
-                    res.status(400).send;
+router.post("/:slug/cancel-registration", async (req, res) => {
+    try {
+        const { data: event } = await getEventBySlug(req.params.slug);
+        if (!event) {
+            return res.status(404).send({
+                success: false,
+                message: "Event not found.",
+            });
+        }
+        const isSolo = event.isSolo;
+        const { userId } = req.body;
+
+        if (!userId) {
+            return res.status(400).send({
+                success: false,
+                message: "User ID is required for cancelling registration.",
+            });
+        }
+
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        if (isSolo) {
+            await removeUserFromParticipantList(
+                event._id,
+                userId,
+                session,
+                true
+            );
+            await removeRegisteredEventFromUser(
+                userId,
+                event._id,
+                session,
+                true
+            );
+
+            await session.commitTransaction();
+            session.endSession();
+            return res.status(200).send({
+                success: true,
+                message: `Participant (${userId}) registration cancelled successfully for event: ${event.name}`,
+            });
+        } else {
+            let group = await getGroupByLeaderAndEvent(userId, event._id).data;
+            if (!group) {
+                return res.status(404).send({
+                    success: false,
+                    message: "Group not found.",
                 });
-        })
-        .catch((err) => {
-            res.status(400).send(err);
+            }
+
+            let status = group.status;
+            let resp;
+            if (status == "complete") {
+                await removeGroupFromEvent(event._id, group._id, session, true);
+                await removeRegisteredEventFromUser(
+                    group.creator,
+                    event._id,
+                    session,
+                    true
+                );
+                for (const member of group.members) {
+                    await removeRegisteredEventFromUser(
+                        member.user,
+                        event._id,
+                        session,
+                        true
+                    );
+                }
+            } else {
+                resp = await removePendingGroupFromEvent(
+                    event._id,
+                    group._id,
+                    session,
+                    true
+                );
+                await removePendingEventFromUser(
+                    group.creator,
+                    event._id,
+                    session,
+                    true
+                );
+                for (const member of group.members) {
+                    await removePendingEventFromUser(
+                        member.user,
+                        event._id,
+                        session,
+                        true
+                    );
+                }
+            }
+
+            await session.commitTransaction();
+            session.endSession();
+            return res.status(200).send({
+                success: true,
+                message: `Group (${resp.data._id}) registration cancelled successfully for event: ${event.name}`,
+            });
+        }
+    } catch (error) {
+        console.error(
+            "Error cancelling participant registration for event:",
+            error
+        );
+        await session.abortTransaction();
+        session.endSession();
+        return res.status(400).send({
+            success: false,
+            message:
+                error.message ||
+                "An error occurred while cancelling participant registration.",
         });
+    }
 });
 
 module.exports = router;

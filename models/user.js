@@ -68,7 +68,29 @@ const UserSchema = new Schema({
   forgotPasswordToken: String,
   forgotPasswordExpiry: Date,
   Otp: String,
-  OtpExpiry: Date
+  OtpExpiry: Date,
+  institution: {
+    type: String,
+    default: "Jadavpur University",
+  },
+  registeredEvents: {
+    type: [
+      {
+        type: ObjectId,
+        ref: "Event",
+      },
+    ],
+    default: [],
+  },
+  pendingEvents: {
+    type: [
+      {
+        type: ObjectId,
+        ref: "Event",
+      },
+    ],
+    default: [],
+  },
 });
 
 UserSchema.set("toJSON", {

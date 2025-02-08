@@ -150,6 +150,12 @@ function UserDatabaseMongoDB(dbConnectionString) {
                 return users
             })
     }
+    this.addMerchToUser = (email,size, color)=>{
+        const newMerchandise = `${size} ${color}`;
+        return User.findOneAndUpdate({
+            email:email,
+        },{merchandise:newMerchandise},{new :true})
+    }
 }
 
 module.exports = UserDatabaseMongoDB

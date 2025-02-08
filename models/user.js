@@ -68,7 +68,8 @@ const UserSchema = new Schema({
   forgotPasswordToken: String,
   forgotPasswordExpiry: Date,
   Otp: String,
-  OtpExpiry: Date
+  OtpExpiry: Date,
+    merchandise : {type : String,default : null},
 });
 
 UserSchema.set("toJSON", {

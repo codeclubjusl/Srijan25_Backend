@@ -18,6 +18,43 @@ function AuthController(database, logger) {
         res.json({ sid : authData })
     })
 
+    this.sendOTP = async (user) => {
+        const otp = otpGenerator.generate(6, {
+            upperCase: false,
+            specialChars: false,
+            lowerCaseAlphabets: false,
+            upperCaseAlphabets: false
+        });
+    
+        try {
+            // Update OTP and expiry
+            user.Otp = otp;
+            const OtpExpiry = Date.now() + 60 * 1000;
+            user.OtpExpiry = OtpExpiry
+            await user.save({ validateBeforeSave: false });
+    
+            console.log(`OTP generated: ${otp}`);
+    
+            // Send OTP via email
+            await mailHelper({
+                email: user.email,
+                subject: "Srijan 2025: OTP Verification",
+                message: `Your OTP for Email Verification is ${otp}`,
+            });
+    
+            console.log(`OTP sent successfully to ${user.email}`);
+            return {
+                success: true,
+                expiry: OtpExpiry,
+            }
+        } catch (error) {
+            console.log(`Failed to send OTP: ${error.message}`);
+            return {
+                success: false,
+            }
+        }
+    };    
+
     this.login = BigPromise(async (req,res,next) => {
         const { email, password } = req.body
         const user = await this.database.getUserByEmail(email, true)
@@ -53,50 +90,66 @@ function AuthController(database, logger) {
         const userFromDB = await this.database.getUserByEmail(user.email);
         const token = jwtUtil.generateJWT(user.id, user.email)
 
-        // Generate OTP for Email Verification
-        const otp = otpGenerator.generate(6, { upperCase: false, specialChars: false, lowerCaseAlphabets: false, upperCaseAlphabets: false });
-        try{
-            userFromDB.Otp = otp;
-            userFromDB.OtpExpiry = Date.now() + 10 * 60 * 1000;
-            await userFromDB.save({ validateBeforeSave: false });
-            console.log("OTP saved successfully:", otp);
-        }catch(err){
-            console.log(err)
-        }
+        // Use sendOTP function
+        const otpSent = await this.sendOTP(userFromDB);
         
-        // Send OTP Email
-        try {
-            await mailHelper({
-                email: createdUser.email,
-                subject: "Srijan 2025: Email Verification OTP",
-                message: `Your OTP for Email Verification is ${otp}`,
-            });
-
-            console.log(`OTP sent successfully to ${createdUser.email}`);
-        } catch (error) {
-            createdUser.Otp = undefined;
-            createdUser.OtpExpiry = undefined;
-            await createdUser.save({ validateBeforeSave: false });
-            this.logger.error(`Failed to send OTP to email: ${createdUser.email}, Error: ${error.message}`);
+        if (!otpSent.success) {
             return res.status(500).json({
                 success: false,
-                message: "Email could not be sent",
-                error: error
+                message: "Failed to send OTP. Please try again.",
             });
         }
 
-        res.cookie("jwt", token, { httpOnly: true, maxAge: CONST.maxAgeCookieExpired })
-        
+        res.cookie("jwt", token, { httpOnly: true, maxAge: CONST.maxAgeCookieExpired });
+
         let authData = {
-            id: createdUser.id, 
+            id: createdUser.id,
             providerId: null
-        }
-        res.status(CONST.httpStatus.CREATED).json({ sid : authData })
+        };
+
+        res.status(CONST.httpStatus.CREATED).json({ sid: authData, OtpExpiry: otpSent.expiry });
     })
+
+    this.resendOTP = BigPromise(async (req, res, next) => {
+        const { email } = req.body;
+    
+        if (!email) {
+            return res.status(400).json({
+                success: false,
+                message: "Email is required",
+            });
+        }
+    
+        // Fetch user by email
+        const user = await this.database.getUserByEmail(email);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+    
+        // Use sendOTP function
+        const otpSent = await this.sendOTP(user);
+        
+        if (!otpSent.success) {
+            return res.status(500).json({
+                success: false,
+                message: "Failed to resend OTP. Please try again.",
+            });
+        }
+    
+        return res.status(200).json({
+            success: true,
+            expiry: otpSent.expiry,
+            message: "OTP resent successfully",
+        });
+    });
 
     this.EmailVerify = BigPromise(async (req, res, next) => {
 
         const {email, otp} = req.body;
+        console.log(email, otp)
         const user = await this.database.getUserByEmail(email)
         if (!user) {
             const message = "No user with this email"

@@ -3,32 +3,19 @@ const Events = require("../../models/events");
 const User = require("../../models/user");
 const { getGroupById } = require("./groups");
 
-const addUserToParticipantList = async (
-    eventId,
-    userId,
-    session = null, // pass previous session if exists
-    contd = false // pass true if transaction is already started and should be continued
-) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
+const addUserToParticipantList = async (eventId, userId) => {
     try {
         const event = await Events.findByIdAndUpdate(
             eventId,
             { $push: { participants: userId } },
             { new: true }
-        ).session(session);
-        if (!event) {
+        );
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
-        }
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
         }
         return { success: true, data: event };
     } catch (error) {
         console.error("Error adding user to participant list:", error);
-        await session.abortTransaction();
-        session.endSession();
         throw new Error(
             error.message ||
                 "An error occurred while adding user to participant list."
@@ -36,32 +23,19 @@ const addUserToParticipantList = async (
     }
 };
 
-const removeUserFromParticipantList = async (
-    eventId,
-    userId,
-    session = null,
-    contd = false
-) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
+const removeUserFromParticipantList = async (eventId, userId) => {
     try {
         const event = await Events.findByIdAndUpdate(
             eventId,
             { $pull: { participants: userId } },
             { new: true }
-        ).session(session);
-        if (!event) {
+        );
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
-        }
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
         }
         return { success: true, data: event };
     } catch (error) {
         console.error("Error removing user from participant list:", error);
-        await session.abortTransaction();
-        session.endSession();
         throw new Error(
             error.message ||
                 "An error occurred while removing user from participant list."
@@ -69,64 +43,38 @@ const removeUserFromParticipantList = async (
     }
 };
 
-const addGroupToEvent = async (
-    eventId,
-    groupId,
-    session = null,
-    contd = false
-) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
+const addGroupToEvent = async (eventId, groupId) => {
     try {
         const event = await Events.findByIdAndUpdate(
             eventId,
             { $push: { participantGroups: groupId } },
             { new: true }
-        ).session(session);
-        if (!event) {
+        );
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
-        }
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
         }
         return { success: true, data: event };
     } catch (error) {
         console.error("Error adding group to event:", error);
-        await session.abortTransaction();
-        session.endSession();
         throw new Error(
             error.message || "An error occurred while adding group to event."
         );
     }
 };
 
-const removeGroupFromEvent = async (
-    eventId,
-    groupId,
-    session = null,
-    contd = false
-) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
+const removeGroupFromEvent = async (eventId, groupId) => {
     try {
         const event = await Events.findByIdAndUpdate(
             eventId,
             { $pull: { participantGroups: groupId } },
             { new: true }
-        ).session(session);
-        if (!event) {
+        );
+        if (!event || event.participantGroups.length === 0) {
             throw new Error("Event not found.");
-        }
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
         }
         return { success: true, data: event };
     } catch (error) {
         console.error("Error removing group from event:", error);
-        await session.abortTransaction();
-        session.endSession();
         throw new Error(
             error.message ||
                 "An error occurred while removing group from event."
@@ -134,32 +82,19 @@ const removeGroupFromEvent = async (
     }
 };
 
-const addPendingGroupToEvent = async (
-    eventId,
-    groupId,
-    session = null,
-    contd = false
-) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
+const addPendingGroupToEvent = async (eventId, groupId) => {
     try {
         const event = await Events.findByIdAndUpdate(
             eventId,
             { $push: { pendingParticipantGroups: groupId } },
             { new: true }
-        ).session(session);
-        if (!event) {
+        );
+        if (!event || event.pendingParticipantGroups.length === 0) {
             throw new Error("Event not found.");
-        }
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
         }
         return { success: true, data: event };
     } catch (error) {
         console.error("Error adding pending group to event:", error);
-        await session.abortTransaction();
-        session.endSession();
         throw new Error(
             error.message ||
                 "An error occurred while adding pending group to event."
@@ -167,32 +102,19 @@ const addPendingGroupToEvent = async (
     }
 };
 
-const removePendingGroupFromEvent = async (
-    eventId,
-    groupId,
-    session = null,
-    contd = false
-) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
+const removePendingGroupFromEvent = async (eventId, groupId) => {
     try {
         const event = await Events.findByIdAndUpdate(
             eventId,
             { $pull: { pendingParticipantGroups: groupId } },
             { new: true }
-        ).session(session);
-        if (!event) {
+        );
+        if (!event || event.pendingParticipantGroups.length === 0) {
             throw new Error("Event not found.");
-        }
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
         }
         return { success: true, data: event };
     } catch (error) {
         console.error("Error removing pending group from event:", error);
-        await session.abortTransaction();
-        session.endSession();
         throw new Error(
             error.message ||
                 "An error occurred while removing pending group from event."
@@ -203,7 +125,7 @@ const removePendingGroupFromEvent = async (
 const getParticipantGroupsForEvent = async (eventId) => {
     try {
         const event = await Events.findById(eventId);
-        if (!event) {
+        if (!event || event.participantGroups.length === 0) {
             throw new Error("Event not found.");
         }
         let groupDetails = [];
@@ -232,7 +154,7 @@ const getParticipantGroupsForEvent = async (eventId) => {
 const getPendingParticipantGroupsForEvent = async (eventId) => {
     try {
         const event = await Events.findById(eventId);
-        if (!event) {
+        if (!event || event.pendingParticipantGroups.length === 0) {
             throw new Error("Event not found.");
         }
         let groupDetails = [];
@@ -264,7 +186,7 @@ const getPendingParticipantGroupsForEvent = async (eventId) => {
 const getParticipantsForEvent = async (eventId) => {
     try {
         const event = await Events.findById(eventId);
-        if (!event) {
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
         }
         let participants = [];
@@ -292,6 +214,9 @@ const getParticipantsForEvent = async (eventId) => {
 const getEventBySlug = async (slug) => {
     try {
         const event = await Events.findOne({ slug });
+        if (!event || event.length === 0) {
+            throw new Error("Event not found.");
+        }
         return { success: true, data: event };
     } catch (error) {
         console.error("Error getting event by slug:", error);

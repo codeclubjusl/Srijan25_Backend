@@ -171,7 +171,11 @@ router.post("/:slug/register", async (req, res) => {
             });
         }
         const isSolo = event.isSolo;
-        const { userId, membersEmails, groupName } = req.body;
+        let { userId, membersEmails, groupName } = req.body;
+        membersEmails = isSolo ? [] : JSON.parse(membersEmails);
+
+        console.log("req.body: ", req.body);
+        console.log("isSolo", isSolo, membersEmails);
 
         if (!userId) {
             return res.status(400).send({
@@ -180,14 +184,14 @@ router.post("/:slug/register", async (req, res) => {
             });
         }
 
-        if (isSolo && membersEmails) {
+        if (isSolo && membersEmails.length) {
             return res.status(400).send({
                 success: false,
                 message: "Members emails are not required for solo events.",
             });
         }
 
-        if (!isSolo && !membersEmails) {
+        if (!isSolo && !membersEmails.length) {
             return res.status(400).send({
                 success: false,
                 message: "Members emails are required for group events.",
@@ -200,19 +204,27 @@ router.post("/:slug/register", async (req, res) => {
         ) {
             return res.status(400).send({
                 success: false,
-                message:
-                    "Number of members should be between min and max participants.",
+                message: `Number of members should be between ${event.minParticipants} and ${event.maxParticipants} participants.`,
             });
         }
 
-        const session = await mongoose.startSession();
-        session.startTransaction();
-        if (isSolo) {
-            await addUserToParticipantList(event._id, userId, session, true);
-            await addRegisteredEventToUser(userId, event._id, session, true);
+        if (!isSolo && !groupName) {
+            return res.status(400).send({
+                success: false,
+                message: "Group name is required for group events.",
+            });
+        }
 
-            await session.commitTransaction();
-            session.endSession();
+        if (isSolo && groupName) {
+            return res.status(400).send({
+                success: false,
+                message: "Group name is not required for solo events.",
+            });
+        }
+
+        if (isSolo) {
+            await addUserToParticipantList(event._id, userId);
+            await addRegisteredEventToUser(userId, event._id);
 
             return res.status(200).send({
                 success: true,
@@ -223,48 +235,25 @@ router.post("/:slug/register", async (req, res) => {
                 userId,
                 membersEmails,
                 groupName,
-                event._id,
-                session,
-                true
+                event._id
             );
             if (group.status == "complete") {
-                await addGroupToEvent(event._id, group._id, session, true);
-
-                await addRegisteredEventToUser(
-                    userId,
-                    event._id,
-                    session,
-                    true
-                );
+                await addGroupToEvent(event._id, group._id);
+                await addRegisteredEventToUser(userId, event._id);
             } else {
-                await addPendingGroupToEvent(
-                    event._id,
-                    group._id,
-                    session,
-                    true
-                );
-
-                await addPendingEventToUser(userId, event._id, session, true);
+                await addPendingGroupToEvent(event._id, group._id);
+                await addPendingEventToUser(userId, event._id);
                 for (const member of group.members) {
-                    await addPendingEventToUser(
-                        member.user,
-                        event._id,
-                        session,
-                        true
-                    );
+                    await addPendingEventToUser(member.user, event._id);
                 }
             }
-            await session.commitTransaction();
-            session.endSession();
             return res.status(200).send({
                 success: true,
-                message: `Group (${resp.data._id}) registered successfully to event: ${event.name}`,
+                message: `Group (${groupName}) registered successfully to event: ${event.name}`,
             });
         }
     } catch (error) {
         console.error("Error registering participant for event:", error);
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).send({
             success: false,
             message:
@@ -293,24 +282,10 @@ router.post("/:slug/cancel-registration", async (req, res) => {
             });
         }
 
-        const session = await mongoose.startSession();
-        session.startTransaction();
         if (isSolo) {
-            await removeUserFromParticipantList(
-                event._id,
-                userId,
-                session,
-                true
-            );
-            await removeRegisteredEventFromUser(
-                userId,
-                event._id,
-                session,
-                true
-            );
+            await removeUserFromParticipantList(event._id, userId);
+            await removeRegisteredEventFromUser(userId, event._id);
 
-            await session.commitTransaction();
-            session.endSession();
             return res.status(200).send({
                 success: true,
                 message: `Participant (${userId}) registration cancelled successfully for event: ${event.name}`,
@@ -325,51 +300,23 @@ router.post("/:slug/cancel-registration", async (req, res) => {
             }
 
             let status = group.status;
-            let resp;
             if (status == "complete") {
-                await removeGroupFromEvent(event._id, group._id, session, true);
-                await removeRegisteredEventFromUser(
-                    group.creator,
-                    event._id,
-                    session,
-                    true
-                );
+                await removeGroupFromEvent(event._id, group._id);
+                await removeRegisteredEventFromUser(group.creator, event._id);
                 for (const member of group.members) {
-                    await removeRegisteredEventFromUser(
-                        member.user,
-                        event._id,
-                        session,
-                        true
-                    );
+                    await removeRegisteredEventFromUser(member.user, event._id);
                 }
             } else {
-                resp = await removePendingGroupFromEvent(
-                    event._id,
-                    group._id,
-                    session,
-                    true
-                );
-                await removePendingEventFromUser(
-                    group.creator,
-                    event._id,
-                    session,
-                    true
-                );
+                await removePendingGroupFromEvent(event._id, group._id);
+                await removePendingEventFromUser(group.creator, event._id);
                 for (const member of group.members) {
-                    await removePendingEventFromUser(
-                        member.user,
-                        event._id,
-                        session,
-                        true
-                    );
+                    await removePendingEventFromUser(member.user, event._id);
                 }
             }
 
-            await session.commitTransaction();
-            session.endSession();
             return res.status(200).send({
                 success: true,
-                message: `Group (${resp.data._id}) registration cancelled successfully for event: ${event.name}`,
+                message: `Group (${group._id}) registration cancelled successfully for event: ${event.name}`,
             });
         }
     } catch (error) {
@@ -377,8 +324,6 @@ router.post("/:slug/cancel-registration", async (req, res) => {
             "Error cancelling participant registration for event:",
             error
         );
-        await session.abortTransaction();
-        session.endSession();
         return res.status(400).send({
             success: false,
             message:

@@ -2,34 +2,30 @@ const { default: mongoose } = require("mongoose");
 const Groups = require("../../models/groups");
 const Users = require("../../models/user");
 
-const createGroup = async (
-    leader,
-    memberEmails,
-    name,
-    event,
-    session = null,
-    contd = false
-) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
-
+const createGroup = async (leader, memberEmails, name, event) => {
     try {
         let memberIds = [];
         for (const member of memberEmails) {
-            let user = await Users.find({
-                email: member,
-            });
-            if (!user) {
+            let user = await Users.find({ email: member });
+            if (!user.length) {
                 throw new Error("Member not found.");
             }
             memberIds.push(user[0]._id);
         }
-        // check if any members are already in a group
+        if (memberIds.length) {
+            for (const member of memberIds) {
+                if (member.toString() === leader.toString()) {
+                    throw new Error("Leader cannot be a member.");
+                }
+            }
+        }
         const existingGroups = await Groups.find({
             event,
-            "members.user": { $in: [...memberIds, leader] },
-            creator: { $in: [...memberIds, leader] },
-        }).session(session);
+            $or: [
+                { "members.user": { $in: [...memberIds, leader] } },
+                { creator: { $in: [...memberIds, leader] } },
+            ],
+        });
         if (existingGroups.length > 0) {
             throw new Error("One or more member is already in a group.");
         }
@@ -38,20 +34,12 @@ const createGroup = async (
             members: memberIds.map((member) => ({ user: member })),
             name,
             event,
-            status: memberEmails.length ? "pending" : "complete", // by default, if no extra members are added, group is complete
+            status: memberEmails.length ? "pending" : "complete",
         });
 
-        await group.save({ session });
-
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
-        }
-
+        await group.save();
         return { success: true, data: group };
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         console.error("Error creating group:", error);
         throw new Error(
             error.message || "An error occurred while creating group."
@@ -64,7 +52,7 @@ const getGroupById = async (id) => {
         const group = await Groups.findById(id)
             .populate("creator")
             .populate("members.user");
-        if (!group) {
+        if (!group || group.length === 0) {
             throw new Error("Group not found.");
         }
         return { success: true, data: group };
@@ -79,6 +67,9 @@ const getGroupById = async (id) => {
 const getGroupByLeaderAndEvent = async (leader, event) => {
     try {
         const group = await Groups.findOne({ creator: leader, event });
+        if (!group || group.length === 0) {
+            throw new Error("Group not found.");
+        }
         return { success: true, data: group };
     } catch (error) {
         console.error("Error getting group by leader and event:", error);
@@ -88,19 +79,11 @@ const getGroupByLeaderAndEvent = async (leader, event) => {
     }
 };
 
-const deleteGroupById = async (id, session = null, contd = false) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
+const deleteGroupById = async (id) => {
     try {
-        await Groups.findByIdAndDelete(id).session(session);
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
-        }
+        await Groups.findByIdAndDelete(id);
         return { success: true, message: "Group deleted successfully." };
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         console.error("Error deleting group by id:", error);
         throw new Error(
             error.message || "An error occurred while deleting group."
@@ -108,42 +91,25 @@ const deleteGroupById = async (id, session = null, contd = false) => {
     }
 };
 
-const acceptInvitation = async (
-    groupId,
-    userId,
-    session = null,
-    contd = false
-) => {
-    if (!session) session = await mongoose.startSession();
-    if (!contd) session.startTransaction();
+const acceptInvitation = async (groupId, userId) => {
     try {
         const group = await Groups.findOne({
             _id: groupId,
             "members.user": userId,
             "members.status": "pending",
-        }).session(session);
+        });
 
-        if (!group) {
-            await session.abortTransaction();
-            session.endSession();
+        if (!group || group.length === 0) {
             throw new Error("User not found or already accepted.");
         }
 
         await Groups.updateOne(
             { _id: groupId, "members.user": userId },
-            { $set: { "members.$.status": "accepted" } },
-            { session }
+            { $set: { "members.$.status": "accepted" } }
         );
-
-        if (!contd) {
-            await session.commitTransaction();
-            session.endSession();
-        }
 
         return { success: true, message: "User accepted successfully." };
     } catch (error) {
-        await session.abortTransaction();
-        session.endSession();
         console.error("Error updating member status:", error);
         throw new Error(
             error.message || "An error occurred while updating status."
@@ -154,7 +120,7 @@ const acceptInvitation = async (
 const getRegistrationStatus = async (groupId) => {
     try {
         const group = await Groups.findById(groupId);
-        if (!group) {
+        if (!group || group.length === 0) {
             throw new Error("Group not found.");
         }
         return { success: true, data: group.status };

@@ -80,7 +80,7 @@ function UserDatabaseMongoDB(dbConnectionString) {
             })
     }
 
-    this.getUserByEmail = (email, requirePassword) => {
+    this.getUserByEmail = (email, requirePassword=false) => {
         if(requirePassword) {
             return User.findOne({ email: email }).select("+password")
             .then((user) => {

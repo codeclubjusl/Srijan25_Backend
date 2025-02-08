@@ -4,7 +4,6 @@ function AuthController(database, logger) {
     this.logger = logger
 
     const CONST = require("../utils/constants")
-    const bcrypt = require("bcrypt")
     // const DuplicatedEmailError = require("../utils/customErrors")
     const jwtUtil = require("../utils/jwt")
     const BigPromise = require("../middlewares/bigPromise")
@@ -13,6 +12,7 @@ function AuthController(database, logger) {
     const otpGenerator = require('otp-generator')
 
     this.getUserSession = BigPromise((req,res,next) => {
+        console.log("Inside getUserSession")
         const jwtToken = req.cookies.jwt
         let authData = jwtUtil.decodeJWT(jwtToken)
         res.json({ sid : authData })
@@ -41,7 +41,7 @@ function AuthController(database, logger) {
         this.logger.info(`Session started for user [${user.email}]`)
         
         let authData = {
-            id: user.id
+            id: user._id
         }
         res.json({ sid: authData })
     })
@@ -50,7 +50,7 @@ function AuthController(database, logger) {
         const user = req.body
         console.log(user)
         const createdUser = await this.database.createUser(user)
-        const userFromDB = await this.database.getUserByEmail(user.email, true);
+        const userFromDB = await this.database.getUserByEmail(user.email);
         const token = jwtUtil.generateJWT(user.id, user.email)
 
         // Generate OTP for Email Verification
@@ -64,8 +64,6 @@ function AuthController(database, logger) {
             console.log(err)
         }
         
-        
-
         // Send OTP Email
         try {
             await mailHelper({
@@ -99,7 +97,7 @@ function AuthController(database, logger) {
     this.EmailVerify = BigPromise(async (req, res, next) => {
 
         const {email, otp} = req.body;
-        const user = await this.database.getUserByEmail(email, true)
+        const user = await this.database.getUserByEmail(email)
         if (!user) {
             const message = "No user with this email"
             console.log("Checking email existence");
@@ -140,7 +138,7 @@ function AuthController(database, logger) {
         const forgotToken = user.getForgotPasswordToken()
         await user.save({validateBeforeSave: false})
         console.log("hello")
-        const myUrl = `${req.protocol}://${req.get("host")}/api/v1/password/reset/${forgotToken}`
+        const myUrl = `http://${process.env.FRONT_HOST}:${process.env.FRONT_PORT}/reset-password/${forgotToken}`
 
         const message = `Copy paste this link in ur URL and hit enter \n\n ${myUrl}`
 
@@ -227,7 +225,11 @@ function AuthController(database, logger) {
             });
     
             console.log('✅ Authentication successful, redirecting...');
-            res.redirect(process.env.SUCCESSFUL_LOGIN_REDIRECT);
+            res.send(`
+                <script>
+                    window.close();
+                </script>
+            `);
         } catch (error) {
             console.error('💥 OAuth login error:', error);
             res.redirect(process.env.FAILED_LOGIN_REDIRECT + '?error=server_error');

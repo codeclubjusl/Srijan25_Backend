@@ -33,6 +33,8 @@ const UserSchema = new Schema({
   },
   phone: {
     type: String,
+    unique: true,
+    sparse: true,
     // required: [true, "Please provide mobile number"],
     validate: {
       validator: function (v) {
@@ -41,7 +43,7 @@ const UserSchema = new Schema({
       message: (props) =>
         `${props.value} is not a valid mobile number for India!`,
     },
-    unique: true,
+    
   },
   consent: {
     type: String,

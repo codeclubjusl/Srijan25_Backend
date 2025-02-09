@@ -25,6 +25,7 @@ function MerchController(database) {
       })
     }
   });
+
   this.bookMerchant = BigPromise(async (req, res, next) => {
     const { size, color } = req.body;
     if (!size || !color) {
@@ -34,24 +35,39 @@ function MerchController(database) {
         message: "missing fields",
       });
     }
-    const jwtToken = req.cookies.jwt;
-    const { email } = decodeJWT(jwtToken);
-    const { merchandise } = await this.database.getUserByEmail(email);
-    if (merchandise) {
-      res.status(CONST.httpStatus.OK);
+    else if (!CONST.merchandiseTypes.size.includes(size) || !CONST.merchandiseTypes.color.includes(color)) {
+      res.status(CONST.httpStatus.BAD_REQUEST);
       res.json({
-        success: true,
-        message: "merchandise already added",
-        merchandise: merchandise
+        success: false,
+        message: "invalid fields",
+        data: {
+          info: "supported types",
+          color: CONST.merchandiseTypes.color,
+          size: CONST.merchandiseTypes.size
+        }
       });
     }
     else {
-      await this.database.addMerchToUser(email, size, color);
-      res.status(CONST.httpStatus.CREATED);
-      res.json({
-        success: true,
-        message: "merchandise added"
-      })
+      const jwtToken = req.cookies.jwt;
+      const { email } = decodeJWT(jwtToken);
+
+      const { merchandise } = await this.database.getUserByEmail(email);
+      if (merchandise) {
+        res.status(CONST.httpStatus.OK);
+        res.json({
+          success: true,
+          message: "merchandise already added",
+          merchandise: merchandise
+        });
+      }
+      else {
+        await this.database.addMerchToUser(email, size, color);
+        res.status(CONST.httpStatus.CREATED);
+        res.json({
+          success: true,
+          message: "merchandise added"
+        })
+      }
     }
   });
 

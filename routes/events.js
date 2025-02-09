@@ -14,17 +14,23 @@ const {
     removePendingGroupFromEvent,
     removeGroupFromEvent,
     addGroupToEvent,
+    checkForParticipation,
 } = require("../services/database/events");
 const { default: mongoose } = require("mongoose");
 const {
     addRegisteredEventToUser,
     addPendingEventToUser,
     removeRegisteredEventFromUser,
+    putInvitation,
+    removeInvitation,
+    removePendingEventFromUser,
 } = require("../services/database/users");
 const {
     createGroup,
     getGroupByLeaderAndEvent,
+    deleteGroupById,
 } = require("../services/database/groups");
+const User = require("../models/user");
 
 router.get("/", async (req, res) => {
     res.json({ message: "Events route" });
@@ -32,8 +38,9 @@ router.get("/", async (req, res) => {
 // POST a new event
 router.post("/new", async (req, res) => {
     try {
-        const { name, description, isSolo, minParticipants, maxParticipants } =
+        let { name, description, isSolo, minParticipants, maxParticipants } =
             req.body;
+        isSolo = isSolo == "true" ? true : false;
         if (
             !name ||
             !description ||
@@ -174,13 +181,17 @@ router.post("/:slug/register", async (req, res) => {
         let { userId, membersEmails, groupName } = req.body;
         membersEmails = isSolo ? [] : JSON.parse(membersEmails);
 
-        console.log("req.body: ", req.body);
-        console.log("isSolo", isSolo, membersEmails);
-
         if (!userId) {
             return res.status(400).send({
                 success: false,
                 message: "User ID is required for registering.",
+            });
+        }
+        let leader = await User.findById(userId);
+        if (!leader) {
+            return res.status(404).send({
+                success: false,
+                message: "User not found.",
             });
         }
 
@@ -191,7 +202,7 @@ router.post("/:slug/register", async (req, res) => {
             });
         }
 
-        if (!isSolo && !membersEmails.length) {
+        if (!isSolo && event.minParticipants > 1 &&!membersEmails.length) {
             return res.status(400).send({
                 success: false,
                 message: "Members emails are required for group events.",
@@ -223,6 +234,12 @@ router.post("/:slug/register", async (req, res) => {
         }
 
         if (isSolo) {
+            if(await checkForParticipation(event._id, userId)){
+                return res.status(400).send({
+                    success: false,
+                    message: `Participant (${userId}) already registered for event: ${event.name}`,
+                });
+            }
             await addUserToParticipantList(event._id, userId);
             await addRegisteredEventToUser(userId, event._id);
 
@@ -245,6 +262,7 @@ router.post("/:slug/register", async (req, res) => {
                 await addPendingEventToUser(userId, event._id);
                 for (const member of group.members) {
                     await addPendingEventToUser(member.user, event._id);
+                    await putInvitation(member.user, event._id, group._id);
                 }
             }
             return res.status(200).send({
@@ -291,13 +309,8 @@ router.post("/:slug/cancel-registration", async (req, res) => {
                 message: `Participant (${userId}) registration cancelled successfully for event: ${event.name}`,
             });
         } else {
-            let group = await getGroupByLeaderAndEvent(userId, event._id).data;
-            if (!group) {
-                return res.status(404).send({
-                    success: false,
-                    message: "Group not found.",
-                });
-            }
+            let resp = await getGroupByLeaderAndEvent(userId, event._id);
+            let group = resp.data;
 
             let status = group.status;
             if (status == "complete") {
@@ -311,8 +324,10 @@ router.post("/:slug/cancel-registration", async (req, res) => {
                 await removePendingEventFromUser(group.creator, event._id);
                 for (const member of group.members) {
                     await removePendingEventFromUser(member.user, event._id);
+                    await removeInvitation(member.user, event._id, group._id);
                 }
             }
+            await deleteGroupById(group._id);
 
             return res.status(200).send({
                 success: true,

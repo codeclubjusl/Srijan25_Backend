@@ -109,7 +109,7 @@ const removePendingGroupFromEvent = async (eventId, groupId) => {
             { $pull: { pendingParticipantGroups: groupId } },
             { new: true }
         );
-        if (!event || event.pendingParticipantGroups.length === 0) {
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
         }
         return { success: true, data: event };
@@ -118,6 +118,33 @@ const removePendingGroupFromEvent = async (eventId, groupId) => {
         throw new Error(
             error.message ||
                 "An error occurred while removing pending group from event."
+        );
+    }
+};
+
+const moveGroupFromPendingToParticipantGroups = async (eventId, groupId) => {
+    try {
+        // TODO: check if group is in pendingParticipantGroups
+        const event = await Events.findByIdAndUpdate(
+            eventId,
+            {
+                $pull: { pendingParticipantGroups: groupId },
+                $push: { participantGroups: groupId },
+            },
+            { new: true }
+        );
+        if (!event || event.pendingParticipantGroups.length === 0) {
+            throw new Error("Event not found.");
+        }
+        return { success: true, data: event };
+    } catch (error) {
+        console.error(
+            "Error moving group from pending to participant groups:",
+            error
+        );
+        throw new Error(
+            error.message ||
+                "An error occurred while moving group from pending to participant groups."
         );
     }
 };
@@ -226,6 +253,25 @@ const getEventBySlug = async (slug) => {
     }
 };
 
+const checkForParticipation = async (eventId, userId) => {
+    try {
+        const event = await Events.findById(eventId);
+        if (!event || event.length === 0) {
+            throw new Error("Event not found.");
+        }
+        if (event.participants.includes(userId)) {
+            return true;
+        }
+        return false;
+    } catch (error) {
+        console.error("Error checking for participation:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while checking for participation."
+        );
+    }
+};
+
 const createNewEvent = async (
     name,
     description,
@@ -275,10 +321,12 @@ module.exports = {
     removeGroupFromEvent,
     addPendingGroupToEvent,
     removePendingGroupFromEvent,
+    moveGroupFromPendingToParticipantGroups,
     getParticipantGroupsForEvent,
     getPendingParticipantGroupsForEvent,
     getParticipantsForEvent,
     getEventBySlug,
     createNewEvent,
     deleteEventById,
+    checkForParticipation,
 };

@@ -81,8 +81,12 @@ const removePendingEventFromUser = async (userId, eventId) => {
     }
 };
 
-const moveEventFromPendingToRegisteredEventForUser = async (userId, eventId) => {
+const moveEventFromPendingToRegisteredEventForUser = async (
+    userId,
+    eventId
+) => {
     try {
+        // TODO: check if event is in pending events
         const user = await Users.findByIdAndUpdate(
             userId,
             {
@@ -107,10 +111,56 @@ const moveEventFromPendingToRegisteredEventForUser = async (userId, eventId) => 
     }
 };
 
+const putInvitation = async (userId, eventId, groupId) => {
+    try {
+        const user = await Users.findByIdAndUpdate(
+            userId,
+            { $push: { invitations: { event: eventId, group: groupId, status: "pending" } } },
+            { new: true }
+        );
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        return { success: true, data: user };
+    } catch (error) {
+        console.error("Error putting invitation for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while putting invitation for user."
+        );
+    }
+};
+
+const removeInvitation = async (userId, eventId, groupId) => {
+    try {
+        const user = await Users.findByIdAndUpdate(
+            userId,
+            {
+                $pull: {
+                    invitations: { eventId, groupId },
+                },
+            },
+            { new: true }
+        );
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        return { success: true, data: user };
+    } catch (error) {
+        console.error("Error removing invitation for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while removing invitation for user."
+        );
+    }
+};
+
 module.exports = {
     addRegisteredEventToUser,
     removeRegisteredEventFromUser,
     addPendingEventToUser,
     removePendingEventFromUser,
     moveEventFromPendingToRegisteredEventForUser,
+    putInvitation,
+    removeInvitation,
 };

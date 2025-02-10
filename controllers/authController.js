@@ -1,317 +1,317 @@
 function AuthController(database, logger) {
 
-    this.database = database
-    this.logger = logger
+  this.database = database
+  this.logger = logger
 
-    const CONST = require("../utils/constants")
-    // const DuplicatedEmailError = require("../utils/customErrors")
-    const jwtUtil = require("../utils/jwt")
-    const BigPromise = require("../middlewares/bigPromise")
-    const mailHelper = require('../utils/emailHelper');
-    const crypto = require("crypto");
-    const otpGenerator = require('otp-generator')
+  const CONST = require("../utils/constants")
+  // const DuplicatedEmailError = require("../utils/customErrors")
+  const jwtUtil = require("../utils/jwt")
+  const BigPromise = require("../middlewares/bigPromise")
+  const mailHelper = require('../utils/emailHelper');
+  const crypto = require("crypto");
+  const otpGenerator = require('otp-generator')
 
-    this.getUserSession = BigPromise((req,res,next) => {
-        console.log("Inside getUserSession")
-        const jwtToken = req.cookies.jwt
-        let authData = jwtUtil.decodeJWT(jwtToken)
-        res.json({ sid : authData })
-    })
+  this.getUserSession = BigPromise((req, res, next) => {
+    console.log("Inside getUserSession")
+    const jwtToken = req.cookies.jwt
+    let authData = jwtUtil.decodeJWT(jwtToken)
+    res.json({ sid: authData })
+  })
 
-    this.sendOTP = async (user) => {
-        const otp = otpGenerator.generate(6, {
-            upperCase: false,
-            specialChars: false,
-            lowerCaseAlphabets: false,
-            upperCaseAlphabets: false
-        });
-    
-        try {
-            // Update OTP and expiry
-            user.Otp = otp;
-            const OtpExpiry = Date.now() + 60 * 1000;
-            user.OtpExpiry = OtpExpiry
-            await user.save({ validateBeforeSave: false });
-    
-            console.log(`OTP generated: ${otp}`);
-    
-            // Send OTP via email
-            await mailHelper({
-                email: user.email,
-                subject: "Srijan 2025: OTP Verification",
-                message: `Your OTP for Email Verification is ${otp}`,
-            });
-    
-            console.log(`OTP sent successfully to ${user.email}`);
-            return {
-                success: true,
-                expiry: OtpExpiry,
-            }
-        } catch (error) {
-            console.log(`Failed to send OTP: ${error.message}`);
-            return {
-                success: false,
-            }
-        }
-    };    
-
-    this.login = BigPromise(async (req,res,next) => {
-        const { email, password } = req.body
-        const user = await this.database.getUserByEmail(email, true)
-        console.log(user)
-        if (!user) {
-            const message = "Email not found"
-            this.logger.info(`Login rejected [${email}]. ${message}`)
-            return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
-        }
-        const isValidPassword = await user.isValidatedPassword(password);
-        
-        if (!isValidPassword) {
-            const message = "Wrong password"
-            console.log(message)
-            this.logger.info(`Login rejected [${email}]. ${message}`)
-            return res.status(CONST.httpStatus.UNAUTHORIZED).json({ error: message })
-        }
-
-        const token = jwtUtil.generateJWT(user.id, user.email)
-        res.cookie("jwt", token, { httpOnly: true, maxAge: CONST.maxAgeCookieExpired })
-        this.logger.info(`Session started for user [${user.email}]`)
-        
-        let authData = {
-            id: user._id
-        }
-        res.json({ sid: authData })
-    })
-
-    this.register = BigPromise(async (req,res,next) => {
-        const user = req.body
-        console.log(user)
-        const createdUser = await this.database.createUser(user)
-        const userFromDB = await this.database.getUserByEmail(user.email);
-        const token = jwtUtil.generateJWT(user.id, user.email)
-
-        // Use sendOTP function
-        const otpSent = await this.sendOTP(userFromDB);
-        
-        if (!otpSent.success) {
-            return res.status(500).json({
-                success: false,
-                message: "Failed to send OTP. Please try again.",
-            });
-        }
-
-        res.cookie("jwt", token, { httpOnly: true, maxAge: CONST.maxAgeCookieExpired });
-
-        let authData = {
-            id: createdUser.id,
-            providerId: null
-        };
-
-        res.status(CONST.httpStatus.CREATED).json({ sid: authData, OtpExpiry: otpSent.expiry });
-    })
-
-    this.resendOTP = BigPromise(async (req, res, next) => {
-        const { email } = req.body;
-    
-        if (!email) {
-            return res.status(400).json({
-                success: false,
-                message: "Email is required",
-            });
-        }
-    
-        // Fetch user by email
-        const user = await this.database.getUserByEmail(email);
-        if (!user) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found",
-            });
-        }
-    
-        // Use sendOTP function
-        const otpSent = await this.sendOTP(user);
-        
-        if (!otpSent.success) {
-            return res.status(500).json({
-                success: false,
-                message: "Failed to resend OTP. Please try again.",
-            });
-        }
-    
-        return res.status(200).json({
-            success: true,
-            expiry: otpSent.expiry,
-            message: "OTP resent successfully",
-        });
+  this.sendOTP = async (user) => {
+    const otp = otpGenerator.generate(6, {
+      upperCase: false,
+      specialChars: false,
+      lowerCaseAlphabets: false,
+      upperCaseAlphabets: false
     });
 
-    this.EmailVerify = BigPromise(async (req, res, next) => {
+    try {
+      // Update OTP and expiry
+      user.Otp = otp;
+      const OtpExpiry = Date.now() + 60 * 1000;
+      user.OtpExpiry = OtpExpiry
+      await user.save({ validateBeforeSave: false });
 
-        const {email, otp} = req.body;
-        console.log(email, otp)
-        const user = await this.database.getUserByEmail(email)
-        if (!user) {
-            const message = "No user with this email"
-            console.log("Checking email existence");
-            this.logger.info(`Email Verification rejected [${email}]. ${message}`)
-            return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
-        }
+      console.log(`OTP generated: ${otp}`);
 
-        if(user.Otp != otp){
-            const message = "OTP does not match"
-            console.log("Checking OTP");
-            this.logger.info(`Email Verification rejected [${email}]. ${message}`)
-            return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
-        }else{
-            user.email.verified = true;
-        }
+      // Send OTP via email
+      await mailHelper({
+        email: user.email,
+        subject: "Srijan 2025: OTP Verification",
+        message: `Your OTP for Email Verification is ${otp}`,
+      });
 
-        user.Otp = undefined;
-        user.OtpExpiry = undefined;
-        await user.save({validateBeforeSave: false})
+      console.log(`OTP sent successfully to ${user.email}`);
+      return {
+        success: true,
+        expiry: OtpExpiry,
+      }
+    } catch (error) {
+      console.log(`Failed to send OTP: ${error.message}`);
+      return {
+        success: false,
+      }
+    }
+  };
 
-        res.status(200).json({
-            success: true,
-            message: "Email verified successfully"
-        })
+  this.login = BigPromise(async (req, res, next) => {
+    const { email, password } = req.body
+    const user = await this.database.getUserByEmail(email, true)
+    console.log(user)
+    if (!user) {
+      const message = "Email not found"
+      this.logger.info(`Login rejected [${email}]. ${message}`)
+      return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
+    }
+    const isValidPassword = await user.isValidatedPassword(password);
+
+    if (!isValidPassword) {
+      const message = "Wrong password"
+      console.log(message)
+      this.logger.info(`Login rejected [${email}]. ${message}`)
+      return res.status(CONST.httpStatus.UNAUTHORIZED).json({ error: message })
+    }
+
+    const token = jwtUtil.generateJWT(user.id, user.email)
+    res.cookie("jwt", token, { httpOnly: true, maxAge: CONST.maxAgeCookieExpired })
+    this.logger.info(`Session started for user [${user.email}]`)
+
+    let authData = {
+      id: user._id
+    }
+    res.json({ sid: authData })
+  })
+
+  this.register = BigPromise(async (req, res, next) => {
+    const user = req.body
+    console.log(user)
+    const createdUser = await this.database.createUser(user)
+    const userFromDB = await this.database.getUserByEmail(user.email);
+    const token = jwtUtil.generateJWT(user.id, user.email)
+
+    // Use sendOTP function
+    const otpSent = await this.sendOTP(userFromDB);
+
+    if (!otpSent.success) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to send OTP. Please try again.",
+      });
+    }
+
+    res.cookie("jwt", token, { httpOnly: true, maxAge: CONST.maxAgeCookieExpired });
+
+    let authData = {
+      id: createdUser.id,
+      providerId: null
+    };
+
+    res.status(CONST.httpStatus.CREATED).json({ sid: authData, OtpExpiry: otpSent.expiry });
+  })
+
+  this.resendOTP = BigPromise(async (req, res, next) => {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    // Fetch user by email
+    const user = await this.database.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Use sendOTP function
+    const otpSent = await this.sendOTP(user);
+
+    if (!otpSent.success) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to resend OTP. Please try again.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      expiry: otpSent.expiry,
+      message: "OTP resent successfully",
+    });
+  });
+
+  this.EmailVerify = BigPromise(async (req, res, next) => {
+
+    const { email, otp } = req.body;
+    console.log(email, otp)
+    const user = await this.database.getUserByEmail(email)
+    if (!user) {
+      const message = "No user with this email"
+      console.log("Checking email existence");
+      this.logger.info(`Email Verification rejected [${email}]. ${message}`)
+      return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
+    }
+
+    if (user.Otp != otp) {
+      const message = "OTP does not match"
+      console.log("Checking OTP");
+      this.logger.info(`Email Verification rejected [${email}]. ${message}`)
+      return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
+    } else {
+      user.email.verified = true;
+    }
+
+    user.Otp = undefined;
+    user.OtpExpiry = undefined;
+    await user.save({ validateBeforeSave: false })
+
+    res.status(200).json({
+      success: true,
+      message: "Email verified successfully"
     })
+  })
 
-    this.forgotPassword = BigPromise(async (req,res,next) => {
-        const { email } = req.body
-        console.log(email)
-        const user = await this.database.getUserByEmail(email, true)
-        if (!user) {
-            const message = "No user with this email"
-            console.log("Checking email existence");
-            this.logger.info(`Forgot password rejected [${email}]. ${message}`)
-            return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
-        }
-        
-        const forgotToken = user.getForgotPasswordToken()
-        await user.save({validateBeforeSave: false})
-        console.log("hello")
-        const myUrl = `http://${process.env.FRONT_HOST}:${process.env.FRONT_PORT}/reset-password/${forgotToken}`
+  this.forgotPassword = BigPromise(async (req, res, next) => {
+    const { email } = req.body
+    console.log(email)
+    const user = await this.database.getUserByEmail(email, true)
+    if (!user) {
+      const message = "No user with this email"
+      console.log("Checking email existence");
+      this.logger.info(`Forgot password rejected [${email}]. ${message}`)
+      return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
+    }
 
-        const message = `Copy paste this link in ur URL and hit enter \n\n ${myUrl}`
+    const forgotToken = user.getForgotPasswordToken()
+    await user.save({ validateBeforeSave: false })
+    console.log("hello")
+    const myUrl = `http://${process.env.FRONT_HOST}:${process.env.FRONT_PORT}/reset-password/${forgotToken}`
 
-        try {
-            await mailHelper({
-                email: user.email,
-                subject: "Srijan 2025 : Password reset email",
-                message,
-            });
+    const message = `Copy paste this link in ur URL and hit enter \n\n ${myUrl}`
 
-            res.status(200).json({
-                success: true,
-                message: "Email sent successfully"
-            })
-        } catch (error) {
-            user.forgotPasswordToken = undefined
-            user.forgotPasswordExpiry = undefined
-            await user.save({validateBeforeSave: false})
+    try {
+      await mailHelper({
+        email: user.email,
+        subject: "Srijan 2025 : Password reset email",
+        message,
+      });
 
-            this.logger.error(`Forgot password email not sent for user [${email}]`)
-            return res.status(500).json({
-                success: false,
-                message: "Email could not be sent",
-                error: error.message
-            });
-        }
-    })
+      res.status(200).json({
+        success: true,
+        message: "Email sent successfully"
+      })
+    } catch (error) {
+      user.forgotPasswordToken = undefined
+      user.forgotPasswordExpiry = undefined
+      await user.save({ validateBeforeSave: false })
 
-    this.passwordReset = BigPromise(async (req,res,next)=>{
-        const token = req.params.token;
-        const encryToken = crypto
-        .createHash('sha256')
-        .update(token)
-        .digest('hex');
-      
-        //console.log(encryToken);
-      
-        const user = await this.database.getUserByForgotPasswordToken(encryToken);
-      
-        if (!user) {
-            const message = "Email not found"
-            this.logger.info(`Password Reset rejected`)
-            return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
-        }
-      
-        if(req.body.password != req.body.confirmPassword){
-            this.logger.error('Password and Confirm Password do not match');
-        }
-      
-        user.password = req.body.password
-        user.forgotPasswordToken = undefined
-        user.forgotPasswordExpiry = undefined
-        await user.save();
+      this.logger.error(`Forgot password email not sent for user [${email}]`)
+      return res.status(500).json({
+        success: false,
+        message: "Email could not be sent",
+        error: error.message
+      });
+    }
+  })
 
-        console.log(user);
-      
-        const cookieToken = jwtUtil.generateJWT(user.id, user.email)
-        res.cookie("jwt", cookieToken, { httpOnly: true, maxAge: CONST.maxAgeCookieExpired })
+  this.passwordReset = BigPromise(async (req, res, next) => {
+    const token = req.params.token;
+    const encryToken = crypto
+      .createHash('sha256')
+      .update(token)
+      .digest('hex');
 
-        return res.status(200).json({
-            success: true,
-            message: "Password reset successful",
-        });
-        
-      
+    //console.log(encryToken);
+
+    const user = await this.database.getUserByForgotPasswordToken(encryToken);
+
+    if (!user) {
+      const message = "Email not found"
+      this.logger.info(`Password Reset rejected`)
+      return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message })
+    }
+
+    if (req.body.password != req.body.confirmPassword) {
+      this.logger.error('Password and Confirm Password do not match');
+    }
+
+    user.password = req.body.password
+    user.forgotPasswordToken = undefined
+    user.forgotPasswordExpiry = undefined
+    await user.save();
+
+    console.log(user);
+
+    const cookieToken = jwtUtil.generateJWT(user.id, user.email)
+    res.cookie("jwt", cookieToken, { httpOnly: true, maxAge: CONST.maxAgeCookieExpired })
+
+    return res.status(200).json({
+      success: true,
+      message: "Password reset successful",
     });
 
-    this.oauthGoogleLogin = async (req, res) => {
-        try {
-            console.log('🚀 Starting OAuth Google login handler');
-            console.log('User object:', req.user);
-    
-            if (!req.user) {
-                console.log('❌ No user in request');
-                return res.redirect(process.env.FAILED_LOGIN_REDIRECT);
-            }
-    
-            const token = jwtUtil.generateJWT(req.user.id, req.user.email);
-            console.log('🔐 Generated JWT:', token);
-    
-            res.cookie("jwt", token, { 
-                httpOnly: true,
-                maxAge: CONST.maxAgeCookieExpired
-            });
-    
-            console.log('✅ Authentication successful, redirecting...');
-            res.send(`
+
+  });
+
+  this.oauthGoogleLogin = async (req, res) => {
+    try {
+      console.log('🚀 Starting OAuth Google login handler');
+      console.log('User object:', req.user);
+
+      if (!req.user) {
+        console.log('❌ No user in request');
+        return res.redirect(process.env.FAILED_LOGIN_REDIRECT);
+      }
+
+      const token = jwtUtil.generateJWT(req.user.id, req.user.email);
+      console.log('🔐 Generated JWT:', token);
+
+      res.cookie("jwt", token, {
+        httpOnly: true,
+        maxAge: CONST.maxAgeCookieExpired
+      });
+
+      console.log('✅ Authentication successful, redirecting...');
+      res.send(`
                 <script>
                     window.close();
                 </script>
             `);
-        } catch (error) {
-            console.error('💥 OAuth login error:', error);
-            res.redirect(process.env.FAILED_LOGIN_REDIRECT + '?error=server_error');
-        }
-    };
+    } catch (error) {
+      console.error('💥 OAuth login error:', error);
+      res.redirect(process.env.FAILED_LOGIN_REDIRECT + '?error=server_error');
+    }
+  };
 
-    const MONGOOSE_DUPLICATED_EMAIL_ERROR_CODE = 11000
+  const MONGOOSE_DUPLICATED_EMAIL_ERROR_CODE = 11000
 
-    // const handleRegisterValidationErrors = (err) => {
-    //     let errors = {
-    //         email: "",
-    //         password: "",
-    //         fullname: ""
-    //     }
-    
-    //     if (err instanceof DuplicatedEmailError || err.code === MONGOOSE_DUPLICATED_EMAIL_ERROR_CODE) {
-    //         errors.email = "That email is already registered"
-    //         return errors
-    //     }
-    
-    //     // Validations error
-    //     if (err.message.includes("User validation failed")) {
-    //         Object.values(err.errors).forEach(({properties}) => {
-    //             errors[properties.path] = properties.message
-    //         })
-    //     }
-    
-    //     return errors
-    // }
+  // const handleRegisterValidationErrors = (err) => {
+  //     let errors = {
+  //         email: "",
+  //         password: "",
+  //         fullname: ""
+  //     }
+
+  //     if (err instanceof DuplicatedEmailError || err.code === MONGOOSE_DUPLICATED_EMAIL_ERROR_CODE) {
+  //         errors.email = "That email is already registered"
+  //         return errors
+  //     }
+
+  //     // Validations error
+  //     if (err.message.includes("User validation failed")) {
+  //         Object.values(err.errors).forEach(({properties}) => {
+  //             errors[properties.path] = properties.message
+  //         })
+  //     }
+
+  //     return errors
+  // }
 
 }
 

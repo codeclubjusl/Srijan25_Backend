@@ -29,7 +29,7 @@ const GroupSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["complete", "pending"],
+        enum: ["complete", "pending", "rejected"],
         default: "pending",
         required: true,
     },

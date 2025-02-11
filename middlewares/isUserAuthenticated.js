@@ -19,6 +19,7 @@ const isUserAuthenticated = (request, response, next) => {
             next(error)
         } else {
             let { email } = decodedToken
+            request.email = email
             logger.debug(`Successful JWT verification for user with email [${email}]`)
             next()
         }

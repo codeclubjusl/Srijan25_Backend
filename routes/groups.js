@@ -1,9 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const Event = require("../models/Event");
-const User = require("../models/User");
-const { Group } = require("../models/Group");
-const { GroupInput } = require("../models/Groups");
+const Group = require("../models/Group");
 
 // GET all groups
 router.get("/", (req, res) => {

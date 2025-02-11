@@ -133,7 +133,7 @@ const moveGroupFromPendingToParticipantGroups = async (eventId, groupId) => {
             },
             { new: true }
         );
-        if (!event || event.pendingParticipantGroups.length === 0) {
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
         }
         return { success: true, data: event };

@@ -179,7 +179,11 @@ router.post("/:slug/register", async (req, res) => {
         }
         const isSolo = event.isSolo;
         let { userId, membersEmails, groupName } = req.body;
-        membersEmails = isSolo ? [] : JSON.parse(membersEmails);
+        membersEmails = isSolo
+            ? []
+            : membersEmails
+            ? JSON.parse(membersEmails)
+            : [];
 
         if (!userId) {
             return res.status(400).send({
@@ -202,7 +206,7 @@ router.post("/:slug/register", async (req, res) => {
             });
         }
 
-        if (!isSolo && event.minParticipants > 1 &&!membersEmails.length) {
+        if (!isSolo && event.minParticipants > 1 && !membersEmails.length) {
             return res.status(400).send({
                 success: false,
                 message: "Members emails are required for group events.",
@@ -234,7 +238,7 @@ router.post("/:slug/register", async (req, res) => {
         }
 
         if (isSolo) {
-            if(await checkForParticipation(event._id, userId)){
+            if (await checkForParticipation(event._id, userId)) {
                 return res.status(400).send({
                     success: false,
                     message: `Participant (${userId}) already registered for event: ${event.name}`,

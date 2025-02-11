@@ -26,6 +26,7 @@ const createGroup = async (leader, memberEmails, name, event) => {
         }
         const existingGroups = await Groups.find({
             event,
+            status: { $ne: "rejected" },
             $or: [
                 { "members.user": { $in: [...memberIds, leader] } },
                 { creator: { $in: [...memberIds, leader] } },
@@ -98,22 +99,73 @@ const deleteGroupById = async (id) => {
 
 const acceptInvitation = async (groupId, userId) => {
     try {
-        const group = await Groups.findOne({
-            _id: groupId,
-            "members.user": userId,
-            "members.status": "pending",
-        });
+        const group = await Groups.findOneAndUpdate(
+            {
+                _id: groupId,
+                "members.user": userId,
+                "members.status": "pending",
+            },
+            {
+                $set: { "members.$.status": "accepted" },
+            },
+            { new: true }
+        );
 
         if (!group || group.length === 0) {
             throw new Error("User not found or already accepted.");
         }
 
-        await Groups.updateOne(
-            { _id: groupId, "members.user": userId },
-            { $set: { "members.$.status": "accepted" } }
+        let isGroupComplete = true;
+
+        for (const member of group.members) {
+            if (member.status === "pending") {
+                isGroupComplete = false;
+                break;
+            }
+        }
+
+        if (isGroupComplete)
+            await Groups.findByIdAndUpdate(groupId, {
+                status: "complete",
+            });
+
+        return {
+            success: true,
+            message: "User accepted successfully.",
+            isGroupComplete,
+            event: group.event,
+        };
+    } catch (error) {
+        console.error("Error updating member status:", error);
+        throw new Error(
+            error.message || "An error occurred while updating status."
+        );
+    }
+};
+
+const rejectInvitation = async (groupId, userId) => {
+    try {
+        const group = await Groups.findOneAndUpdate(
+            {
+                _id: groupId,
+                "members.user": userId,
+                "members.status": "pending",
+            },
+            {
+                $set: { "members.$.status": "rejected", status: "rejected" },
+            },
+            { new: true }
         );
 
-        return { success: true, message: "User accepted successfully." };
+        if (!group || group.length === 0) {
+            throw new Error("User not found or already accepted.");
+        }
+
+        return {
+            success: true,
+            message: "User rejected successfully.",
+            event: group.event,
+        };
     } catch (error) {
         console.error("Error updating member status:", error);
         throw new Error(
@@ -143,6 +195,7 @@ module.exports = {
     getGroupById,
     deleteGroupById,
     acceptInvitation,
+    rejectInvitation,
     getRegistrationStatus,
     getGroupByLeaderAndEvent,
 };

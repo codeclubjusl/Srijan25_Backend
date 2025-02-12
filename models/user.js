@@ -3,6 +3,7 @@ const { isEmail, isMobilePhone } = require("validator");
 const logger = require("../services/log/logger");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
+const CONST = require("../utils/constants")
 
 const UserSchema = new Schema({
   id: {
@@ -26,13 +27,15 @@ const UserSchema = new Schema({
     lowercase: true,
     maxlength: [128, "Maximum password length is 128"],
     validate: [isEmail, "Please enter a valid email"],
-    verified:{
+    verified: {
       type: Boolean,
       default: false
     }
   },
   phone: {
     type: String,
+    unique: true,
+    sparse: true,
     // required: [true, "Please provide mobile number"],
     validate: {
       validator: function (v) {
@@ -41,7 +44,7 @@ const UserSchema = new Schema({
       message: (props) =>
         `${props.value} is not a valid mobile number for India!`,
     },
-    unique: true,
+
     sparse: true,
   },
   consent: {
@@ -112,7 +115,23 @@ const UserSchema = new Schema({
     ],
     default: [],
   },
+  merchandise: {
+    type: new Schema(
+      {
+        size: {
+          type: String,
+          enum: CONST.merchandiseTypes.size
+        },
+        color: {
+          type: String,
+          enum: CONST.merchandiseTypes.color
+        }
+      }
+    ), default: null
+  },
 });
+
+
 
 UserSchema.set("toJSON", {
   transform: (document, returnedObject) => {

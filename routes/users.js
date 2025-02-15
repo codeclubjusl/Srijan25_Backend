@@ -2,16 +2,6 @@ const express = require("express")
 const { isUserAuthenticated } = require("../middlewares")
 const userController = require("../controllers/userController")
 const merchController = require("../controllers/merchController")
-const router = express.Router();
-
-router.get("/users/:id", isUserAuthenticated, userController.getUserById)
-router.delete("/users/:id", isUserAuthenticated, userController.deleteUserById)
-router.delete("/users/:id", isUserAuthenticated, userController.deleteUserById)
-router.get("/users/get/Merchandise", isUserAuthenticated, merchController.getMerchant)
-router.post("/users/merchandise", isUserAuthenticated, merchController.bookMerchant)
-
-const { isUserAuthenticated } = require("../middlewares");
-const userController = require("../controllers/userController");
 const {
     getInvitations,
     getUserByEmail,
@@ -30,6 +20,15 @@ const {
     moveGroupFromPendingToParticipantGroups,
     removePendingGroupFromEvent,
 } = require("../services/database/events");
+
+
+const router = express.Router();
+
+router.get("/users/:id", isUserAuthenticated, userController.getUserById)
+router.delete("/users/:id", isUserAuthenticated, userController.deleteUserById)
+router.delete("/users/:id", isUserAuthenticated, userController.deleteUserById)
+router.get("/users/get/Merchandise", isUserAuthenticated, merchController.getMerchant)
+router.post("/users/merchandise", isUserAuthenticated, merchController.bookMerchant)
 
 router.get("/users/:id", isUserAuthenticated, userController.getUserById);
 router.delete("/users/:id", isUserAuthenticated, userController.deleteUserById);

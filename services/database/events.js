@@ -69,7 +69,7 @@ const removeGroupFromEvent = async (eventId, groupId) => {
             { $pull: { participantGroups: groupId } },
             { new: true }
         );
-        if (!event || event.participantGroups.length === 0) {
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
         }
         return { success: true, data: event };
@@ -89,7 +89,7 @@ const addPendingGroupToEvent = async (eventId, groupId) => {
             { $push: { pendingParticipantGroups: groupId } },
             { new: true }
         );
-        if (!event || event.pendingParticipantGroups.length === 0) {
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
         }
         return { success: true, data: event };
@@ -152,11 +152,11 @@ const moveGroupFromPendingToParticipantGroups = async (eventId, groupId) => {
 const getParticipantGroupsForEvent = async (eventId) => {
     try {
         const event = await Events.findById(eventId);
-        if (!event || event.participantGroups.length === 0) {
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
         }
         let groupDetails = [];
-        for (let i = 0; i < event.participantGroups.length; i++) {
+        for (let i = 0; i < event.length; i++) {
             const group = await getGroupById(event.participantGroups[i]);
             if (group.success) {
                 groupDetails.push(group.data);
@@ -181,11 +181,11 @@ const getParticipantGroupsForEvent = async (eventId) => {
 const getPendingParticipantGroupsForEvent = async (eventId) => {
     try {
         const event = await Events.findById(eventId);
-        if (!event || event.pendingParticipantGroups.length === 0) {
+        if (!event || event.length === 0) {
             throw new Error("Event not found.");
         }
         let groupDetails = [];
-        for (let i = 0; i < event.pendingParticipantGroups.length; i++) {
+        for (let i = 0; i < event.length; i++) {
             const group = await getGroupById(event.pendingParticipantGroups[i]);
             if (group.success) {
                 groupDetails.push(group.data);

@@ -15,7 +15,7 @@ GET /events/
 
 **cURL Example:**
 ```bash
-curl -X GET http://localhost:3080/events/
+curl -X GET http://localhost:3080/api/v1/events/
 ```
 
 ### 2. Create New Event (Used by Admins to create an event in the backend)
@@ -32,7 +32,7 @@ POST /events/new
 
 **cURL Example:**
 ```bash
-curl -X POST http://localhost:3080/events/new \
+curl -X POST http://localhost:3080/api/v1/events/new \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Coding Contest",
@@ -53,7 +53,7 @@ DELETE /events/delete/:slug
 
 **cURL Example:**
 ```bash
-curl -X DELETE http://localhost:3080/events/delete/coding-contest
+curl -X DELETE http://localhost:3080/api/v1/events/delete/coding-contest
 ```
 
 ### 4. Get Event Details (Admin only)
@@ -63,7 +63,7 @@ GET /events/:slug
 
 **cURL Example:**
 ```bash
-curl -X GET http://localhost:3080/events/coding-contest
+curl -X GET http://localhost:3080/api/v1/events/coding-contest
 ```
 
 ### 5. Get Event Participants (Admin only)
@@ -73,7 +73,7 @@ GET /events/:slug/getParticipants
 
 **cURL Example:**
 ```bash
-curl -X GET http://localhost:3080/events/coding-contest/getParticipants
+curl -X GET http://localhost:3080/api/v1/events/coding-contest/getParticipants
 ```
 
 ### 6. Get Participant Groups (Admin only)
@@ -83,7 +83,7 @@ GET /events/:slug/getParticipantGroups
 
 **cURL Example:**
 ```bash
-curl -X GET http://localhost:3080/events/coding-contest/getParticipantGroups
+curl -X GET http://localhost:3080/api/v1/events/coding-contest/getParticipantGroups
 ```
 
 ### 7. Get Pending Participant Groups (Admin only)
@@ -93,7 +93,7 @@ GET /events/:slug/getPendingParticipantGroups
 
 **cURL Example:**
 ```bash
-curl -X GET http://localhost:3080/events/coding-contest/getPendingParticipantGroups
+curl -X GET http://localhost:3080/api/v1/events/coding-contest/getPendingParticipantGroups
 ```
 
 ### 8. Register for Event
@@ -108,7 +108,7 @@ POST /events/:slug/register
 
 **cURL Example for Solo Registration:**
 ```bash
-curl -X POST http://localhost:3080/events/coding-contest/register \
+curl -X POST http://localhost:3080/api/v1/events/coding-contest/register \
   -H "Content-Type: application/json" \
   -d '{
     "userId": "user123"
@@ -117,7 +117,7 @@ curl -X POST http://localhost:3080/events/coding-contest/register \
 
 **cURL Example for Group Registration:**
 ```bash
-curl -X POST http://localhost:3080/events/coding-contest/register \
+curl -X POST http://localhost:3080/api/v1/events/coding-contest/register \
   -H "Content-Type: application/json" \
   -d '{
     "userId": "user123",
@@ -137,7 +137,7 @@ POST /events/:slug/cancel-registration
 
 **cURL Example:**
 ```bash
-curl -X POST http://localhost:3080/events/coding-contest/cancel-registration \
+curl -X POST http://localhost:3080/events/api/v1/coding-contest/cancel-registration \
   -H "Content-Type: application/json" \
   -d '{
     "userId": "user123"

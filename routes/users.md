@@ -10,7 +10,7 @@ Retrieves all invitations for the authenticated user.
 
 **Endpoint:** `GET /invitations`
 ```bash
-curl -X GET "http://localhost:3080/invitations" \
+curl -X GET "http://localhost:3080/api/v1/invitations" \
 ```
 
 ### 2. Accept Invitation
@@ -26,7 +26,7 @@ Accepts a group invitation.
 ```
 
 ```bash
-curl -X POST "http://localhost:3080/accept-invitation" \
+curl -X POST "http://localhost:3080/api/v1/accept-invitation" \
   -H "Content-Type: application/json" \
   -d '{
     "groupId": "group_id_here"
@@ -46,7 +46,7 @@ Rejects a group invitation.
 ```
 
 ```bash
-curl -X POST "http://localhost:3080/reject-invitation" \
+curl -X POST "http://localhost:3080/api/v1/reject-invitation" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{

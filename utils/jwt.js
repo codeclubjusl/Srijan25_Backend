@@ -8,7 +8,7 @@ const generateJWT = (userId, userEmail, provider = null) => {
             providerId: provider
         },
         process.env.TOKEN_SECRET,
-        { expiresIn: "1h" }  // Set expiration (adjust as needed)
+        { expiresIn: "1h" }  
     );
 };
 

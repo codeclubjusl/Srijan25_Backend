@@ -10,6 +10,8 @@ router.post("/password/reset/:token", authController.passwordReset)
 router.post("/EmailVerify", authController.EmailVerify)
 router.post("/resendOtp", authController.resendOTP)
 router.put("/updateDetails", authController.updateDetails);
+router.post("/logout", authController.logout);
+router.put("/changePassword", authController.changePassword);
 
 const passport = require("passport")
 passport.debug = true;

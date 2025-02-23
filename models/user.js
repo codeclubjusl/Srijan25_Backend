@@ -26,10 +26,10 @@ const UserSchema = new Schema({
     lowercase: true,
     maxlength: [128, "Maximum password length is 128"],
     validate: [isEmail, "Please enter a valid email"],
-    verified:{
-      type: Boolean,
-      default: false
-    }
+  },
+  emailVerified: {
+    type: Boolean,
+    default: false, 
   },
   phone: {
     type: String,

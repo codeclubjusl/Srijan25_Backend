@@ -169,6 +169,7 @@ function AuthController(database, logger) {
 
         user.Otp = undefined;
         user.OtpExpiry = undefined;
+        user.emailVerified = true;
         await user.save({validateBeforeSave: false})
 
         res.status(200).json({
@@ -289,30 +290,55 @@ function AuthController(database, logger) {
         }
     };
 
-    const MONGOOSE_DUPLICATED_EMAIL_ERROR_CODE = 11000
-
-    // const handleRegisterValidationErrors = (err) => {
-    //     let errors = {
-    //         email: "",
-    //         password: "",
-    //         fullname: ""
-    //     }
+    this.updateDetails = BigPromise(async (req, res, next) => {
+        try {
+            const { name, phone, merchandise, consent } = req.body;
+            
+            const jwtToken = req.cookies.jwt;
+            if (!jwtToken) {
+                return res.status(CONST.httpStatus.UNAUTHORIZED).json({ error: "No token provided" });
+            }
     
-    //     if (err instanceof DuplicatedEmailError || err.code === MONGOOSE_DUPLICATED_EMAIL_ERROR_CODE) {
-    //         errors.email = "That email is already registered"
-    //         return errors
-    //     }
+            const authData = jwtUtil.decodeJWT(jwtToken);
+            if (!authData || !authData.id) {
+                return res.status(CONST.httpStatus.UNAUTHORIZED).json({ error: "Invalid or expired token" });
+            }
+        
+            let user = await this.database.getUserById(authData.id);
+            if (!user) {
+                return res.status(CONST.httpStatus.NOT_FOUND).json({ error: "User not found" });
+            }
     
-    //     // Validations error
-    //     if (err.message.includes("User validation failed")) {
-    //         Object.values(err.errors).forEach(({properties}) => {
-    //             errors[properties.path] = properties.message
-    //         })
-    //     }
+            if (name) user.name = name;
+            if (phone) user.phone = phone;
+            if (consent !== undefined) user.consent = consent; // Allow `false` values
     
-    //     return errors
-    // }
-
+            if (merchandise) {
+                if (!user.merchandise) user.merchandise = {}; // Ensure merchandise exists
+                if (merchandise.size) user.merchandise.size = merchandise.size;
+                if (merchandise.color) user.merchandise.color = merchandise.color;
+            }
+    
+            await user.save();
+            
+            res.status(200).json({
+                success: true,
+                message: "User details updated successfully",
+                user: {
+                    name: user.name,
+                    phone: user.phone,
+                    consent: user.consent,
+                    merchandise: user.merchandise,
+                }
+            });
+    
+        } catch (error) {
+            console.error("Error updating user:", error);
+            res.status(CONST.httpStatus.INTERNAL_SERVER_ERROR).json({ error: "Something went wrong" });
+        }
+    });
+    
+    
 }
 
 const logger = require("../services/log/logger")

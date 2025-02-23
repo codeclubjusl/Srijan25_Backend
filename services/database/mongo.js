@@ -33,16 +33,16 @@ function UserDatabaseMongoDB(dbConnectionString) {
         return mongoose.connection.close()
     }
 
-
     this.createUser = (user) => {
         if (!user) {
             throw "user cannot be null or undefined"
         }
-        const { name , email, password, consent="y", phone, providers  } = user
+        const { name , email, emailVerified=false, password, consent="y", phone, providers  } = user
 
         const newUser = new User({
             name: name,
             email: email,
+            emailVerified: emailVerified,
             password: password,
             phone: phone,
             consent: consent,

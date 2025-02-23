@@ -32,6 +32,7 @@ async function handleGoogleAuth(profile) {
         const newUser = await database.createUser({
             name: profile.displayName,
             email: email,
+            emailVerified: true,
             providers: [{
                 providerName: 'google',
                 providerUserId: profile.id,

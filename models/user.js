@@ -45,6 +45,7 @@ const UserSchema = new Schema({
         `${props.value} is not a valid mobile number for India!`,
     },
 
+    sparse: true,
   },
   consent: {
     type: String,
@@ -72,6 +73,48 @@ const UserSchema = new Schema({
   forgotPasswordExpiry: Date,
   Otp: String,
   OtpExpiry: Date,
+  institution: {
+    type: String,
+    default: "Jadavpur University",
+  },
+  registeredEvents: {
+    type: [
+      {
+        type: ObjectId,
+        ref: "Event",
+      },
+    ],
+    default: [],
+  },
+  pendingEvents: {
+    type: [
+      {
+        type: ObjectId,
+        ref: "Event",
+      },
+    ],
+    default: [],
+  },
+  invitations: {
+    type: [
+      {
+        event: {
+          type: ObjectId,
+          ref: "Event",
+        },
+        group: {
+          type: ObjectId,
+          ref: "Group",
+        },
+        status: {
+          type: String,
+          enum: ["pending", "accepted", "rejected"],
+          default: "pending",
+        },
+      },
+    ],
+    default: [],
+  },
   merchandise: {
     type: new Schema(
       {
@@ -135,6 +178,9 @@ UserSchema.methods.getForgotPasswordToken = function () {
 
   return forgotToken;
 };
+
+UserSchema.index({ email: 1 }, { unique: true });
+
 
 const User = model("User", UserSchema);
 

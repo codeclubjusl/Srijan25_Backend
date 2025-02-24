@@ -85,12 +85,12 @@ function UserDatabaseMongoDB(dbConnectionString) {
     if (requirePassword) {
       return User.findOne({ email: email }).select("+password")
         .then((user) => {
-          return user
+          return user?.toJSON()
         })
     } else {
       return User.findOne({ email: email })
         .then((user) => {
-          return user
+          return user?.toJSON()
         })
     }
   }
@@ -100,7 +100,7 @@ function UserDatabaseMongoDB(dbConnectionString) {
       forgotPasswordToken: token,
       forgotPasswordExpiry: { $gt: Date.now() }
     }).select("+password").then((user) => {
-      return user
+      return user?.toJSON()
     })
   }
 

@@ -29,6 +29,7 @@ POST /events/new
 - `isSolo` (boolean): Whether event is for individual participants
 - `minParticipants` (number): Minimum number of participants
 - `maxParticipants` (number): Maximum number of participants
+- `category` (string): Category of the event
 
 **cURL Example:**
 ```bash
@@ -39,7 +40,8 @@ curl -X POST http://localhost:3080/api/v1/events/new \
     "description": "Annual coding competition",
     "isSolo": "true",
     "minParticipants": 1,
-    "maxParticipants": 1
+    "maxParticipants": 1,
+    "category": "coding",
   }'
 ```
 
@@ -96,7 +98,7 @@ GET /events/:slug/getPendingParticipantGroups
 curl -X GET http://localhost:3080/api/v1/events/coding-contest/getPendingParticipantGroups
 ```
 
-### 8. Register for Event
+### 8. Register for Event (Authenticated Users only)
 ```http
 POST /events/:slug/register
 ```
@@ -127,7 +129,7 @@ curl -X POST http://localhost:3080/api/v1/events/coding-contest/register \
 ```
 Send empty array if the team leader is participating alone in a group event which allows for solo participations
 
-### 9. Cancel Registration
+### 9. Cancel Registration (Authenticated Users only)
 ```http
 POST /events/:slug/cancel-registration
 ```

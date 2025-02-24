@@ -13,6 +13,9 @@ const EventSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
+    category: {
+        type: String,
+    },
     isSolo: {
         type: Boolean,
         required: true,

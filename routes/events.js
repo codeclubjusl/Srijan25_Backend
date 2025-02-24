@@ -31,12 +31,14 @@ const {
     deleteGroupById,
 } = require("../services/database/groups");
 const User = require("../models/user");
+const { isUserAuthenticated } = require("../middlewares");
+
 
 router.get("/", async (req, res) => {
     res.json({ message: "Events route" });
 });
 // POST a new event
-router.post("/new", async (req, res) => {
+router.post("/new", isAdmin, async (req, res) => {
     try {
         let { name, description, isSolo, minParticipants, maxParticipants } =
             req.body;
@@ -81,7 +83,7 @@ router.post("/new", async (req, res) => {
 });
 
 // DELETE an event
-router.delete("/delete/:slug", async (req, res) => {
+router.delete("/delete/:slug", isAdmin, async (req, res) => {
     try {
         const { data: event } = await getEventBySlug(req.params.slug);
         const { success, message } = await deleteEventById(event._id);
@@ -96,7 +98,7 @@ router.delete("/delete/:slug", async (req, res) => {
 });
 
 // GET a specific event
-router.get("/:slug", async (req, res) => {
+router.get("/:slug", isAdmin, async (req, res) => {
     try {
         const { success, data: event } = await getEventBySlug(req.params.slug);
         return res.status(200).send({ success, data: event });
@@ -111,7 +113,7 @@ router.get("/:slug", async (req, res) => {
     }
 });
 
-router.get("/:slug/getParticipants", async (req, res) => {
+router.get("/:slug/getParticipants", isAdmin, async (req, res) => {
     try {
         const { data: event } = await getEventBySlug(req.params.slug);
         const { success, data: participants } = await getParticipantsForEvent(
@@ -129,7 +131,7 @@ router.get("/:slug/getParticipants", async (req, res) => {
     }
 });
 
-router.get("/:slug/getParticipantGroups", async (req, res) => {
+router.get("/:slug/getParticipantGroups", isAdmin, async (req, res) => {
     try {
         const { data: event } = await getEventBySlug(req.params.slug);
         const { success, data: groups } = await getParticipantGroupsForEvent(
@@ -147,7 +149,7 @@ router.get("/:slug/getParticipantGroups", async (req, res) => {
     }
 });
 
-router.get("/:slug/getPendingParticipantGroups", async (req, res) => {
+router.get("/:slug/getPendingParticipantGroups", isAdmin, async (req, res) => {
     try {
         const { data: event } = await getEventBySlug(req.params.slug);
         const { success, data: groups } =
@@ -168,7 +170,7 @@ router.get("/:slug/getPendingParticipantGroups", async (req, res) => {
 });
 
 // POST a participant to an event
-router.post("/:slug/register", async (req, res) => {
+router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
     try {
         const { data: event } = await getEventBySlug(req.params.slug);
         if (!event) {
@@ -285,7 +287,7 @@ router.post("/:slug/register", async (req, res) => {
     }
 });
 
-router.post("/:slug/cancel-registration", async (req, res) => {
+router.post("/:slug/cancel-registration", isUserAuthenticated, async (req, res) => {
     try {
         const { data: event } = await getEventBySlug(req.params.slug);
         if (!event) {

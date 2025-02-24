@@ -339,7 +339,7 @@ function AuthController(database, logger) {
         return res.redirect(process.env.FAILED_LOGIN_REDIRECT);
       }
 
-      const token = jwtUtil.generateJWT(req.user.id, req.user.email);
+      const token = jwtUtil.generateJWT(req.user.id, req.user.email, req.user.providers);
       console.log("🔐 Generated JWT:", token);
 
       res.cookie("jwt", token, {

@@ -8,16 +8,12 @@ const generateJWT = (userId, userEmail, provider = null) => {
             providerId: provider
         },
         process.env.TOKEN_SECRET,
-        { expiresIn: "1h" }  
     );
 };
 
 const decodeJWT = (token) => {
-    try {
-        return jwt.verify(token, process.env.TOKEN_SECRET); 
-    } catch (error) {
-        return null;  
-    }
+    return jwt.decode(token, process.env.TOKEN_SECRET); 
+    
 };
 
 module.exports = {

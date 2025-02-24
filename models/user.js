@@ -3,7 +3,7 @@ const { isEmail, isMobilePhone } = require("validator");
 const logger = require("../services/log/logger");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const CONST = require("../utils/constants")
+const CONST = require("../utils/constants");
 
 const UserSchema = new Schema({
   id: {
@@ -44,7 +44,6 @@ const UserSchema = new Schema({
       message: (props) =>
         `${props.value} is not a valid mobile number for India!`,
     },
-
   },
   consent: {
     type: String,
@@ -52,9 +51,9 @@ const UserSchema = new Schema({
     // required: [true, "Consent is required"]
   },
   photo: {
-    url: {
-      type: String,
-    },
+    url: String, 
+    id: {type: String, default: ""},
+    isGooglePhoto: Boolean,
   },
   providers: {
     type: Array,
@@ -73,22 +72,19 @@ const UserSchema = new Schema({
   Otp: String,
   OtpExpiry: Date,
   merchandise: {
-    type: new Schema(
-      {
-        size: {
-          type: String,
-          enum: CONST.merchandiseTypes.size
-        },
-        color: {
-          type: String,
-          enum: CONST.merchandiseTypes.color
-        }
-      }
-    ), default: null
+    type: new Schema({
+      size: {
+        type: String,
+        enum: CONST.merchandiseTypes.size,
+      },
+      color: {
+        type: String,
+        enum: CONST.merchandiseTypes.color,
+      },
+    }),
+    default: null,
   },
 });
-
-
 
 UserSchema.set("toJSON", {
   transform: (document, returnedObject) => {

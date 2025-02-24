@@ -3,7 +3,7 @@ const database = require("../../services/database");
 const logger = require("../../services/log/logger");
 
 async function handleGoogleAuth(profile) {
-    console.log('🔍 Processing Google profile:', JSON.stringify(profile, null, 2));
+    // console.log('🔍 Processing Google profile:', JSON.stringify(profile, null, 2));
     
     try {
         // Check for existing user by Google ID
@@ -18,17 +18,21 @@ async function handleGoogleAuth(profile) {
         const emailUser = await database.getUserByEmail(email);
         if (emailUser) {
             console.log('📧 Linking Google account to existing email user');
+            //console.log(emailUser);
             await database.addProviderUser({
-                userId: emailUser.id,
+                userId: emailUser._id,
                 providerUserId: profile.id,
                 providerName: 'google',
                 picture: profile.photos[0]?.value
             });
-            return emailUser;
+            const updatedUser = await database.getUserByEmail(email);
+    
+            //console.log('🔄 Updated user after linking:', updatedUser);
+            return updatedUser;
         }
 
         // Create new user
-        console.log('🆕 Creating new user from Google profile');
+        // console.log('🆕 Creating new user from Google profile');
         const newUser = await database.createUser({
             name: profile.displayName,
             email: email,
@@ -37,12 +41,16 @@ async function handleGoogleAuth(profile) {
                 providerName: 'google',
                 providerUserId: profile.id,
                 picture: profile.photos[0]?.value
-            }]
+            }],
+            photo: {
+                url: profile.photos[0]?.value,
+                isGooglePhoto: true
+            }
         });
 
         return newUser;
     } catch (error) {
-        console.error('❗ Error in Google auth handler:', error);
+        // console.error('❗ Error in Google auth handler:', error);
         throw error;
     }
 }
@@ -55,11 +63,11 @@ const googleProvider = new GoogleStrategy({
 }, 
 async (req, accessToken, refreshToken, profile, done) => {
     try {
-        console.log('🔑 Received Google profile ID:', profile.id);
+        // console.log('🔑 Received Google profile ID:', profile.id);
         const user = await handleGoogleAuth(profile);
         done(null, user);
     } catch (error) {
-        console.error('❌ Google strategy error:', error);
+        // console.error('❌ Google strategy error:', error);
         done(error, null);
     }
 });

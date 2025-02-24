@@ -8,6 +8,7 @@ function AuthController(database, logger) {
   const mailHelper = require("../utils/emailHelper");
   const crypto = require("crypto");
   const otpGenerator = require("otp-generator");
+  const cloudinary = require("cloudinary");
 
   this.getUserSession = BigPromise((req, res, next) => {
     console.log("Inside getUserSession");
@@ -385,13 +386,35 @@ function AuthController(database, logger) {
 
       if (name) user.name = name;
       if (phone) user.phone = phone;
-      if (consent !== undefined) user.consent = consent; // Allow `false` values
+      if (consent !== undefined) user.consent = consent; 
 
       if (merchandise) {
-        if (!user.merchandise) user.merchandise = {}; // Ensure merchandise exists
+        if (!user.merchandise) user.merchandise = {}; 
         if (merchandise.size) user.merchandise.size = merchandise.size;
         if (merchandise.color) user.merchandise.color = merchandise.color;
       }
+
+      if (req.files && req.files.photo) {
+        // Delete old Cloudinary image if not Google photo
+        if (user.photo.id && !user.photo.isGooglePhoto) {
+            await cloudinary.v2.uploader.destroy(user.photo.id);
+        }
+    
+        // Upload new photo to Cloudinary
+        const result = await cloudinary.v2.uploader.upload(
+            req.files.photo.tempFilePath,
+            {
+                folder: "users",
+                width: 150,
+                crop: "scale",
+            }
+        );
+    
+        // Update user photo details
+        user.photo.url = result.secure_url;
+        user.photo.id = result.public_id;
+        user.photo.isGooglePhoto = false; 
+    }
 
       await user.save();
 

@@ -40,7 +40,7 @@ router.get("/", async (req, res) => {
 // POST a new event
 router.post("/new", isAdmin, async (req, res) => {
     try {
-        let { name, description, isSolo, minParticipants, maxParticipants } =
+        let { name, description, isSolo, minParticipants, maxParticipants, category } =
             req.body;
         isSolo = isSolo == "true" ? true : false;
         if (
@@ -69,7 +69,8 @@ router.post("/new", isAdmin, async (req, res) => {
             description,
             isSolo,
             minParticipants,
-            maxParticipants
+            maxParticipants,
+            category
         );
         return res.status(201).send({ success, data: event });
     } catch (error) {

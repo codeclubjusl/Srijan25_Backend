@@ -9,7 +9,7 @@ const routes = require("./routes")
 
 const app = express()
 
-const frontUri = `http://${process.env.FRONT_HOST}:${process.env.FRONT_PORT}`
+const frontUri = `${process.env.FRONT_HOST}:${process.env.FRONT_PORT}`
 
 app.use(cors({ origin: frontUri, credentials: true }))
 

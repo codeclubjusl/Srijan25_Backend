@@ -25,7 +25,7 @@ database.connect()
         logger.info("Database succesfully connected")
 
         const PORT = process.env.BACK_PORT
-        const backUri = `http://${process.env.BACK_HOST}:${PORT}`
+        const backUri = `${process.env.BACK_HOST}`
         
         app.listen(PORT, () => {
             logger.info(`Server running on ${backUri}`)

@@ -1,162 +1,184 @@
 function UserDatabaseMongoDB(dbConnectionString) {
-
-  const logger = require("../log/logger")
-  const mongoose = require("mongoose")
-  const connectionString = dbConnectionString
-  const User = require("../../models/user")
+  const logger = require("../log/logger");
+  const mongoose = require("mongoose");
+  const connectionString = dbConnectionString;
+  const User = require("../../models/user");
 
   this.connect = () => {
-
     mongoose.connection.on("error", function (err) {
-      logger.error("Database connection error: " + err)
-    })
+      logger.error("Database connection error: " + err);
+    });
 
     mongoose.connection.on("disconnected", function () {
-      logger.info("Database disconnected")
-    })
+      logger.info("Database disconnected");
+    });
 
     process.on("SIGINT", function () {
       mongoose.connection.close(function () {
-        logger.info("Database process terminated")
-        process.exit(0)
-      })
-    })
+        logger.info("Database process terminated");
+        process.exit(0);
+      });
+    });
 
     if (!connectionString) {
-      throw new Error("Impossible to connect to MongoDB database: connection string not stabilished")
+      throw new Error(
+        "Impossible to connect to MongoDB database: connection string not stabilished"
+      );
     }
 
-    return mongoose.connect(connectionString)
-  }
+    return mongoose.connect(connectionString);
+  };
 
   this.close = () => {
-    return mongoose.connection.close()
-  }
+    return mongoose.connection.close();
+  };
 
+  this.createUser = (user) => {
+    if (!user) {
+      throw "user cannot be null or undefined";
+    }
+    const {
+      name,
+      email,
+      emailVerified = false,
+      password,
+      consent = "y",
+      phone,
+      providers,
+      photo = ""
+    } = user;
 
-    this.createUser = (user) => {
-        if (!user) {
-            throw "user cannot be null or undefined"
-        }
-        const { name , email, emailVerified=false, password, consent="y", phone, providers  } = user
+    const newUser = new User({
+      name: name,
+      email: email,
+      emailVerified: emailVerified,
+      password: password,
+      phone: phone,
+      consent: consent,
+      providers: providers,
+      photo: photo,
+    });
 
-        const newUser = new User({
-            name: name,
-            email: email,
-            emailVerified: emailVerified,
-            password: password,
-            phone: phone,
-            consent: consent,
-            providers: providers
-        })
-
-    return newUser.save()
-      .then((savedUser) => {
-        return savedUser?.toJSON()
-      })
-  }
+    return newUser.save().then((savedUser) => {
+      return savedUser?.toJSON();
+    });
+  };
 
   this.deleteUserById = (id) => {
     if (!id) {
-      throw "id cannot be null or undefined"
+      throw "id cannot be null or undefined";
     }
 
-    return User.findByIdAndDelete(id)
-      .then((deletedUser) => {
-        if (!deletedUser) {
-          throw "User not found"
-        }
-        return deletedUser?.toJSON()
-      })
-  }
+    return User.findByIdAndDelete(id).then((deletedUser) => {
+      if (!deletedUser) {
+        throw "User not found";
+      }
+      return deletedUser?.toJSON();
+    });
+  };
 
   this.getUserById = (id) => {
     if (!id) {
-      throw "id cannot be null or undefined"
+      throw "id cannot be null or undefined";
     }
 
-    return User.findById(id)
-      .then((user) => {
-        return user?.toJSON()
-      })
-  }
+    return User.findById(id).then((user) => {
+      return user?.toJSON();
+    });
+  };
 
   this.getUserByEmail = (email, requirePassword = false) => {
     if (requirePassword) {
-      return User.findOne({ email: email }).select("+password")
-        .then((user) => {
-          return user?.toJSON()
-        })
-    } else {
       return User.findOne({ email: email })
+        .select("+password")
         .then((user) => {
-          return user?.toJSON()
-        })
+          return user;
+        });
+    } else {
+      return User.findOne({ email: email }).then((user) => {
+        return user;
+      });
     }
-  }
+  };
 
   this.getUserByForgotPasswordToken = (token) => {
     return User.findOne({
       forgotPasswordToken: token,
-      forgotPasswordExpiry: { $gt: Date.now() }
-    }).select("+password").then((user) => {
-      return user?.toJSON()
+      forgotPasswordExpiry: { $gt: Date.now() },
     })
-  }
+      .select("+password")
+      .then((user) => {
+        return user;
+      });
+  };
 
   this.getUserByProviderId = (providerUserId) => {
     if (!providerUserId) {
-      throw "providerUserId cannot be null or undefined"
+      throw "providerUserId cannot be null or undefined";
     }
-    return User.findOne({ "providers.providerUserId": providerUserId })
-      .then((user) => {
-        return user?.toJSON(providerUserId)
-      })
-  }
+    return User.findOne({ "providers.providerUserId": providerUserId }).then(
+      (user) => {
+        return user?.toJSON(providerUserId);
+      }
+    );
+  };
 
   this.addProviderUser = async (user) => {
     if (!user) {
-      throw "user cannot be null or undefined"
+      throw "user cannot be null or undefined";
     }
     if (!user.userId) {
-      throw "userId fields cannot be null or undefined"
+      throw "userId field cannot be null or undefined";
     }
     if (!user.providerUserId) {
-      throw "providerUserId fields cannot be null or undefined"
+      throw "providerUserId field cannot be null or undefined";
     }
     if (!user.providerName) {
-      throw "providerName fields cannot be null or undefined"
+      throw "providerName field cannot be null or undefined";
     }
-    let { userId, providerUserId, providerName, loginName = "", picture = "" } = user
 
-    return User.findByIdAndUpdate(userId, {
-      $push: {
-        providers: {
-          providerUserId: providerUserId,
-          providerName: providerName,
-          loginName: loginName,
-          picture: picture
-        }
+    let {
+      userId,
+      providerUserId,
+      providerName,
+      loginName = "",
+      picture = "",
+    } = user;
+
+    return await User.findByIdAndUpdate(
+      userId,
+      {
+        $push: {
+          providers: {
+            providerUserId,
+            providerName,
+            loginName,
+            picture,
+          },
+        },
+      },
+      {
+        new: true,
       }
-    }, {
-      new: true
-    }
     ).then((savedUser) => {
-      return savedUser?.toJSON()
-    })
-  }
+      return savedUser?.toJSON();
+    });
+  };
 
   this.getUsers = () => {
-    return User.find({})
-      .then((users) => {
-        return users
-      })
-  }
+    return User.find({}).then((users) => {
+      return users;
+    });
+  };
   this.addMerchToUser = (email, size, color) => {
-    return User.findOneAndUpdate({
-      email: email,
-    }, { merchandise: { size, color } }, { new: true, runValidator: true })
-  }
+    return User.findOneAndUpdate(
+      {
+        email: email,
+      },
+      { merchandise: { size, color } },
+      { new: true, runValidator: true }
+    );
+  };
 }
 
-module.exports = UserDatabaseMongoDB
+module.exports = UserDatabaseMongoDB;

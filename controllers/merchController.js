@@ -1,3 +1,4 @@
+const emailHelper = require("../utils/emailHelper");
 function MerchController(database) {
 
   this.database = database
@@ -62,6 +63,7 @@ function MerchController(database) {
       }
       else {
         await this.database.addMerchToUser(email, size, color);
+        // send html mail
         res.status(CONST.httpStatus.CREATED);
         res.json({
           success: true,
@@ -70,11 +72,25 @@ function MerchController(database) {
       }
     }
   });
-
+  this.testing = async (req, res, next) => {
+    console.log("here")
+    const option = {
+      email: "only444testing@gmail.com",
+      subject: "hello",
+      message: "hello world"
+    }
+    await emailHelper(option);
+    res.status(CONST.httpStatus.CREATED);
+    res.json({
+      success: true,
+      message: "done"
+    })
+  }
 }
 
 const database = require("../services/database");
 const { decodeJWT } = require("../utils/jwt");
+const { transport } = require("winston");
 const merchController = new MerchController(database)
 
 module.exports = merchController

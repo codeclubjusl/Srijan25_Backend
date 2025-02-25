@@ -75,6 +75,8 @@ function AuthController(database, logger) {
     const token = jwtUtil.generateJWT(user.id, user.email);
     res.cookie("jwt", token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: "None",
       maxAge: CONST.maxAgeCookieExpired,
     });
     this.logger.info(`Session started for user [${user.email}]`);
@@ -88,8 +90,8 @@ function AuthController(database, logger) {
   this.logout = BigPromise((req, res, next) => {
     res.clearCookie("jwt", {
       httpOnly: true,
-      //secure: true,
-      sameSite: "Strict",
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: "None",
     });
 
     res.status(200).json({ success: true, message: "Logged out successfully" });
@@ -114,6 +116,8 @@ function AuthController(database, logger) {
 
     res.cookie("jwt", token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production", 
+      sameSite: "None",
       maxAge: CONST.maxAgeCookieExpired,
     });
 
@@ -345,6 +349,8 @@ function AuthController(database, logger) {
 
       res.cookie("jwt", token, {
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production", 
+        sameSite: "None",
         maxAge: CONST.maxAgeCookieExpired,
       });
 

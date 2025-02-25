@@ -58,7 +58,7 @@ async function handleGoogleAuth(profile) {
 const googleProvider = new GoogleStrategy({
     clientID: process.env.GOOGLE_AUTH_CLIENT_ID,
     clientSecret: process.env.GOOGLE_AUTH_CLIENT_SECRET,
-    callbackURL: `http://${process.env.BACK_HOST}:${process.env.BACK_PORT}/api/v1/oauth/google/callback`,
+    callbackURL: `${process.env.BACK_HOST}/api/v1/oauth/google/callback`,
      passReqToCallback: true
 }, 
 async (req, accessToken, refreshToken, profile, done) => {

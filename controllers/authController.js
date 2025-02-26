@@ -451,6 +451,7 @@ function AuthController(database, logger) {
         user: {
           name: user.name,
           phone: user.phone,
+          photourl: user.photo.url,
           consent: user.consent,
           merchandise: user.merchandise,
         },

@@ -78,8 +78,6 @@ function AuthController(database, logger) {
       secure: process.env.NODE_ENV === "production" ? true : false, // Secure only in production
       sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // "Lax" allows cookies in local dev
       maxAge: CONST.maxAgeCookieExpired,
-      secure: true,
-      httpOnly: true,
     });
     this.logger.info(`Session started for user [${user.email}]`);
 

@@ -36,7 +36,7 @@ const UserSchema = new Schema({
     unique: true,
     sparse: true,
     validate: {
-      validator: function (v) {
+      validator: function(v) {
         return isMobilePhone(v, "en-IN");
       },
       message: (props) =>
@@ -53,8 +53,8 @@ const UserSchema = new Schema({
     default: 0,
   },
   photo: {
-    url: String, 
-    id: {type: String, default: ""},
+    url: String,
+    id: { type: String, default: "" },
     isGooglePhoto: Boolean,
   },
   providers: {
@@ -134,6 +134,10 @@ const UserSchema = new Schema({
         type: String,
         enum: CONST.merchandiseTypes.color,
       },
+      status: {
+        type: String,
+        enum: CONST.paymentStatus,
+      }
     }),
     default: null,
   },
@@ -147,7 +151,7 @@ UserSchema.set("toJSON", {
   },
 });
 
-UserSchema.pre("save", async function (next) {
+UserSchema.pre("save", async function(next) {
   if (this.password) {
     const salt = await bcrypt.genSalt();
     this.password = await bcrypt.hash(this.password, salt);
@@ -156,22 +160,22 @@ UserSchema.pre("save", async function (next) {
 });
 
 //validate the password
-UserSchema.methods.isValidatedPassword = async function (usersentPassword) {
+UserSchema.methods.isValidatedPassword = async function(usersentPassword) {
   return await bcrypt.compare(usersentPassword, this.password);
 };
 
-UserSchema.post("save", function (doc, next) {
+UserSchema.post("save", function(doc, next) {
   let savedUser = doc;
   logger.info(`User with email [${savedUser.email}] succesfully created`);
   next();
 });
 
-UserSchema.pre("findOneAndUpdate", function (next) {
+UserSchema.pre("findOneAndUpdate", function(next) {
   this.options.runValidators = true;
   next();
 });
 
-UserSchema.methods.getForgotPasswordToken = function () {
+UserSchema.methods.getForgotPasswordToken = function() {
   const forgotToken = crypto.randomBytes(20).toString("hex");
 
   this.forgotPasswordToken = crypto

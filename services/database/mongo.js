@@ -18,16 +18,16 @@ function UserDatabaseMongoDB(dbConnectionString) {
   }
 
   this.connect = () => {
-    mongoose.connection.on("error", function (err) {
+    mongoose.connection.on("error", function(err) {
       logger.error("Database connection error: " + err);
     });
 
-    mongoose.connection.on("disconnected", function () {
+    mongoose.connection.on("disconnected", function() {
       logger.info("Database disconnected");
     });
 
-    process.on("SIGINT", function () {
-      mongoose.connection.close(function () {
+    process.on("SIGINT", function() {
+      mongoose.connection.close(function() {
         logger.info("Database process terminated");
         process.exit(0);
       });
@@ -237,7 +237,7 @@ function UserDatabaseMongoDB(dbConnectionString) {
       {
         email: email,
       },
-      { merchandise: { size, color } },
+      { merchandise: { size, color, status: "pending", } },
       { new: true, runValidator: true }
     );
   };

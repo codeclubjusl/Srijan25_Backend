@@ -3,6 +3,7 @@ const { isUserAuthenticated } = require("../middlewares");
 const userController = require("../controllers/userController");
 const merchController = require("../controllers/merchController");
 const {
+
     getInvitations,
     getUserByEmail,
     moveEventFromPendingToRegisteredEventForUser,
@@ -18,20 +19,24 @@ const {
     getGroupById,
 } = require("../services/database/groups");
 const {
-    acceptInvitation: acceptInvitationByUser,
-    rejectInvitation: rejectInvitationByUser,
+  acceptInvitation: acceptInvitationByUser,
+  rejectInvitation: rejectInvitationByUser,
 } = require("../services/database/users");
 const {
+
     moveGroupFromPendingToParticipantGroups,
     removePendingGroupFromEvent,
     getEventBySlug,
+
 } = require("../services/database/events");
 
 const router = express.Router();
 
+
 router.get("/testAuth", isUserAuthenticated, (req, res) => {
-    return res.status(200).json({ message: "Authenticated" });
+  return res.status(200).json({ message: "Authenticated" });
 });
+
 
 router.get(
     "/users/get-participation-status/:slug",
@@ -106,8 +111,16 @@ router.get("/users/registered", isUserAuthenticated, async (req, res) => {
     } catch (error) {
         console.error("Error getting registered events for user:", error);
         return res.status(500).json({ error: error.message });
+
     }
+    const invitations = await getInvitations(userId);
+    return res.status(200).json(invitations);
+  } catch (error) {
+    console.error("Error getting invitations for user:", error);
+    return res.status(500).json({ error: error.message });
+  }
 });
+
 router.get("/users/pending", isUserAuthenticated, async (req, res) => {
     try {
         let { data: user } = await getUserByEmail(req.email);
@@ -119,7 +132,16 @@ router.get("/users/pending", isUserAuthenticated, async (req, res) => {
     } catch (error) {
         console.error("Error getting pending events for user:", error);
         return res.status(500).json({ error: error.message });
+
     }
+    return res.status(200).json({
+      success: true,
+      data: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error accepting invitation for user:", error);
+    return res.status(500).json({ error: error.message });
+  }
 });
 router.get(
     "/users/:id/wishlist",
@@ -178,6 +200,7 @@ router.get("/users/invitations", isUserAuthenticated, async (req, res) => {
         console.error("Error getting invitations for user:", error);
         return res.status(500).json({ error: error.message });
     }
+
 });
 
 router.post(

@@ -19,8 +19,11 @@ const merchandiseTypes = {
   size: ['S', 'M', "L", "XL", "XXL", "XXXL"],
   color: ['Black', 'White']
 }
+const paymentStatus = [
+  "pending", "accepted", "rejected",
+]
 
-const CONST = { httpStatus, OAuthProviders, maxAgeCookieExpired, merchandiseTypes }
+const CONST = { httpStatus, OAuthProviders, maxAgeCookieExpired, merchandiseTypes, paymentStatus }
 
 
 module.exports = CONST

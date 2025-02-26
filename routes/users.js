@@ -113,12 +113,6 @@ router.get("/users/registered", isUserAuthenticated, async (req, res) => {
         return res.status(500).json({ error: error.message });
 
     }
-    const invitations = await getInvitations(userId);
-    return res.status(200).json(invitations);
-  } catch (error) {
-    console.error("Error getting invitations for user:", error);
-    return res.status(500).json({ error: error.message });
-  }
 });
 
 router.get("/users/pending", isUserAuthenticated, async (req, res) => {

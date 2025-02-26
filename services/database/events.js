@@ -278,7 +278,8 @@ const createNewEvent = async (
     isSolo,
     minParticipants,
     maxParticipants,
-    category
+    category,
+    slug
 ) => {
     try {
         let existingEvent = await Events.findOne({ name });
@@ -289,7 +290,7 @@ const createNewEvent = async (
             name,
             description,
             isSolo,
-            slug: name.toLowerCase().replaceAll(" ", "_"),
+            slug: slug ? slug : name.toLowerCase().replaceAll(" ", "_"),
             minParticipants,
             maxParticipants,
             category,

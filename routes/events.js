@@ -46,6 +46,7 @@ router.post("/new", isAdmin, async (req, res) => {
             minParticipants,
             maxParticipants,
             category,
+            slug,
         } = req.body;
         isSolo = isSolo == "true" ? true : false;
         if (
@@ -53,13 +54,14 @@ router.post("/new", isAdmin, async (req, res) => {
             !description ||
             !minParticipants ||
             !maxParticipants ||
+            !slug ||
             isSolo == undefined ||
             isSolo == null
         ) {
             return res.status(400).send({
                 success: false,
                 message:
-                    "All fields { name, description, isSolo, minParticipants, maxParticipants } are required for creating new event.",
+                    "All fields { name, description, isSolo, minParticipants, maxParticipants, slug } are required for creating new event.",
             });
         }
         if (isSolo && minParticipants != 1 && maxParticipants != 1) {
@@ -75,7 +77,8 @@ router.post("/new", isAdmin, async (req, res) => {
             isSolo,
             minParticipants,
             maxParticipants,
-            category
+            category,
+            slug
         );
         return res.status(201).send({ success, data: event });
     } catch (error) {

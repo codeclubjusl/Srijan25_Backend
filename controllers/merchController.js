@@ -190,7 +190,7 @@ function MerchController(database) {
       await this.s3.send(command);
       //this.database.addMerchToUser(email, size, color);
 
-      sendPaymentRecievedMail(email);
+      sendPaymentRecievedMail(email,nameOnShirt,size, color);
       res.status(CONST.httpStatus.OK).json({
         message: "Image uploaded successfully",
         fileName: image.originalname,

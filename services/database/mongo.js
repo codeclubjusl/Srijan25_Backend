@@ -175,7 +175,7 @@ function UserDatabaseMongoDB(dbConnectionString) {
       {
         email: email,
       },
-      { merchandise: { size, color, status: "pending" } },
+      { merchandise: { size, color, status: "pending", } },
       { new: true, runValidator: true }
     );
   };

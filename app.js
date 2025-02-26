@@ -13,15 +13,17 @@ const frontUri = `${process.env.FRONT_HOST}`
 
 app.use(cors({ origin: frontUri, credentials: true }))
 
-app.use(express.json()) 
-app.use(express.urlencoded({ extended: true })) 
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 app.use(cookieParser())
+/*
 app.use(
-    fileUpload({
-      useTempFiles: true,
-      tempFileDir: "/tmp/",
-    })
-  );
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  })
+);
+*/
 app.use(passport.initialize())
 // app.use(passport.session());
 

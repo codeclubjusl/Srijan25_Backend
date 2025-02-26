@@ -128,14 +128,6 @@ router.get("/users/pending", isUserAuthenticated, async (req, res) => {
         return res.status(500).json({ error: error.message });
 
     }
-    return res.status(200).json({
-      success: true,
-      data: updatedUser,
-    });
-  } catch (error) {
-    console.error("Error accepting invitation for user:", error);
-    return res.status(500).json({ error: error.message });
-  }
 });
 router.get(
     "/users/:id/wishlist",

@@ -466,6 +466,7 @@ function AuthController(database, logger) {
 
 const logger = require("../services/log/logger");
 const database = require("../services/database");
+const { http } = require("winston");
 const authController = new AuthController(database, logger);
 
 module.exports = authController;

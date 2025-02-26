@@ -190,6 +190,7 @@ function MerchController(database) {
       await this.s3.send(command);
       //this.database.addMerchToUser(email, size, color);
 
+      sendPaymentRecievedMail(email);
       res.status(CONST.httpStatus.OK).json({
         message: "Image uploaded successfully",
         fileName: image.originalname,
@@ -209,6 +210,7 @@ const { decodeJWT } = require("../utils/jwt");
 const { transport } = require("winston");
 const { checkDiscountAvailable } = require("../services/database/payment");
 const { isVAT } = require("validator");
+const { sendPaymentRecievedMail } = require("../utils/emails");
 const merchController = new MerchController(database)
 
 module.exports = merchController

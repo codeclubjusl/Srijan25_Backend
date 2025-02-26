@@ -20,7 +20,7 @@ const upload = multer({
   storage: storage
 });
 
-router.post("/submitImage", upload.single("image"), merchController.addImage)
+router.post("/submitImage",isUserAuthenticated, upload.single("image"), merchController.addImage)
 router.get("/checkDiscount", merchController.checkDiscount)
 
 //router.get("/getValidation", isUserAuthenticated, merchController.getQR)

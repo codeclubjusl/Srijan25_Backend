@@ -3,6 +3,19 @@ function UserDatabaseMongoDB(dbConnectionString) {
   const mongoose = require("mongoose");
   const connectionString = dbConnectionString;
   const User = require("../../models/user");
+  const fs = require("fs");
+  const path = require("path");
+
+  function loadReferralCodes() {
+    try {
+      const filePath = path.join(__dirname, "campusReferrals.json"); 
+      const data = fs.readFileSync(filePath, "utf8");
+      return JSON.parse(data);
+    } catch (error) {
+      console.error("Error loading referral codes:", error);
+      return {}; // Return an empty object if file read fails
+    }
+  }
 
   this.connect = () => {
     mongoose.connection.on("error", function (err) {
@@ -33,10 +46,27 @@ function UserDatabaseMongoDB(dbConnectionString) {
     return mongoose.connection.close();
   };
 
-  this.createUser = (user) => {
+  this.createUser = async (user) => {
     if (!user) {
       throw "user cannot be null or undefined";
     }
+
+    let campusReferrals = {};
+
+    if(user.campusReferralCode){
+      // Load referral codes from JSON file
+      console.log("checking list");
+      
+      campusReferrals = loadReferralCodes();
+      console.log("Loaded campusReferrals:", campusReferrals);
+      if (!campusReferrals.hasOwnProperty(user.campusReferralCode)) {
+        const error = new Error("Invalid referral code");
+        error.status = 400;
+        error.keyPattern = { campusReferralCode: 1 }; 
+        throw error;
+      }
+    }
+
     const {
       name,
       email,
@@ -59,9 +89,41 @@ function UserDatabaseMongoDB(dbConnectionString) {
       photo: photo,
     });
 
-    return newUser.save().then((savedUser) => {
-      return savedUser?.toJSON();
-    });
+    try {
+      const savedUser = await newUser.save();
+  
+    // Increment referral count only after user is successfully created
+    if (user.campusReferralCode) {
+      console.log("updating referral");
+      console.log("updating referral for code:", user.campusReferralCode);
+      console.log("Current referral data:", campusReferrals[user.campusReferralCode]);
+      await this.incrementReferralCount(user.campusReferralCode, campusReferrals);
+    }
+    console.log("Referral count updated successfully!");
+      return savedUser.toJSON();
+    } catch (error) {
+      console.error("Error updating referral count:", error);
+      throw error; 
+    }    
+  };
+
+  this.incrementReferralCount = async (referralCode, campusReferrals=loadReferralCodes()) => {
+    if (!referralCode) {
+      return false;
+    }
+  
+    const email = campusReferrals[referralCode];
+    if (!email) {
+      return false;
+    }
+  
+    const user = await User.findOneAndUpdate(
+      { email },
+      { $inc: { referralCount: 1 } },
+      { new: true }
+    );
+  
+    return !!user;
   };
 
   this.deleteUserById = (id) => {
@@ -146,7 +208,7 @@ function UserDatabaseMongoDB(dbConnectionString) {
     } = user;
 
     return await User.findByIdAndUpdate(
-      userId,
+      new mongoose.Types.ObjectId(userId),
       {
         $push: {
           providers: {

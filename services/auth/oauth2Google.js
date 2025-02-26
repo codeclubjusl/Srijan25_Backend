@@ -10,17 +10,18 @@ async function handleGoogleAuth(profile) {
         const existingUser = await database.getUserByProviderId(profile.id);
         if (existingUser) {
             console.log('✅ Found existing Google user');
-            return existingUser;
+            return {user: existingUser, isNewUser: false};
         }
 
         // Check for user by email
         const email = profile.emails[0].value;
         const emailUser = await database.getUserByEmail(email);
+        //console.log(emailUser);
         if (emailUser) {
             console.log('📧 Linking Google account to existing email user');
             //console.log(emailUser);
             await database.addProviderUser({
-                userId: emailUser._id,
+                userId: emailUser._id.toString(),
                 providerUserId: profile.id,
                 providerName: 'google',
                 picture: profile.photos[0]?.value
@@ -28,7 +29,7 @@ async function handleGoogleAuth(profile) {
             const updatedUser = await database.getUserByEmail(email);
     
             //console.log('🔄 Updated user after linking:', updatedUser);
-            return updatedUser;
+            return {user:updatedUser.toJSON(), isNewUser:false};
         }
 
         // Create new user
@@ -48,7 +49,7 @@ async function handleGoogleAuth(profile) {
             }
         });
 
-        return newUser;
+        return {user:newUser, isNewUser: true};
     } catch (error) {
         // console.error('❗ Error in Google auth handler:', error);
         throw error;
@@ -64,8 +65,8 @@ const googleProvider = new GoogleStrategy({
 async (req, accessToken, refreshToken, profile, done) => {
     try {
         // console.log('🔑 Received Google profile ID:', profile.id);
-        const user = await handleGoogleAuth(profile);
-        done(null, user);
+        const {user, isNewUser} = await handleGoogleAuth(profile);
+        done(null, { user, isNewUser });
     } catch (error) {
         // console.error('❌ Google strategy error:', error);
         done(error, null);

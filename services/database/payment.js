@@ -7,12 +7,21 @@ const mongoose = require("mongoose");
  * @param {String} userId - The user ID to add.
  * @returns {Promise<Object>} - The updated payment document.
  */
-async function incrementCountAndAddUser(paymentId, userId) {
-  return await Payment.findByIdAndUpdate(
-    paymentId,
+// async function incrementCountAndAddUser(paymentId, userId) {
+//   return await Payment.findByIdAndUpdate(
+//     paymentId,
+//     {
+//       $inc: { usedCount: 1 },
+//       $addToSet: { users: { user: new mongoose.Types.ObjectId(userId) } }
+//     },
+//     { new: true }
+//   );
+// }
+async function incrementCountAndAddUser() {
+  return await Payment.findOneAndUpdate(
+    { name: "earlyBirds" },
     {
       $inc: { usedCount: 1 },
-      $addToSet: { users: { user: new mongoose.Types.ObjectId(userId) } }
     },
     { new: true }
   );

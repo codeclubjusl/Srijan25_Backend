@@ -75,8 +75,8 @@ function AuthController(database, logger) {
     const token = jwtUtil.generateJWT(user.id, user.email);
     res.cookie("jwt", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", 
-      sameSite: "None",
+      secure: process.env.NODE_ENV === "production" ? true : false, // Secure only in production
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // "Lax" allows cookies in local dev
       maxAge: CONST.maxAgeCookieExpired,
       secure: true,
       httpOnly: true,
@@ -92,8 +92,8 @@ function AuthController(database, logger) {
   this.logout = BigPromise((req, res, next) => {
     res.clearCookie("jwt", {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", 
-      sameSite: "None",
+      secure: process.env.NODE_ENV === "production" ? true : false, // Secure only in production
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // "Lax" allows cookies in local dev
     });
 
     res.status(200).json({ success: true, message: "Logged out successfully" });
@@ -101,10 +101,10 @@ function AuthController(database, logger) {
 
   this.register = BigPromise(async (req, res, next) => {
     const user = req.body;
-    console.log(user);
+    //console.log(user);
     const createdUser = await this.database.createUser(user);
     const userFromDB = await this.database.getUserByEmail(user.email);
-    const token = jwtUtil.generateJWT(user.id, user.email);
+    const token = jwtUtil.generateJWT(user.id, user.email, null, true);
 
     // Use sendOTP function
     const otpSent = await this.sendOTP(userFromDB);
@@ -118,8 +118,8 @@ function AuthController(database, logger) {
 
     res.cookie("jwt", token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production", 
-      sameSite: "None",
+      secure: process.env.NODE_ENV === "production" ? true : false, // Secure only in production
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // "Lax" allows cookies in local dev
       maxAge: CONST.maxAgeCookieExpired,
     });
 
@@ -132,6 +132,26 @@ function AuthController(database, logger) {
       .status(CONST.httpStatus.CREATED)
       .json({ sid: authData, OtpExpiry: otpSent.expiry });
   });
+
+  this.addReferral = BigPromise(async (req, res, next) => {
+    try {
+        const { code } = req.body;
+
+        if (!code) {
+            return res.status(400).json({ success: false, message: "Referral code is required" });
+        }
+
+        const success = await this.database.incrementReferralCount(code);
+
+        if (success) {
+            return res.status(200).json({ success: true, message: "Referral count updated successfully" });
+        } else {
+            return res.status(404).json({ success: false, message: "Invalid referral code or referrer not found" });
+        }
+    } catch (error) {
+        return res.status(500).json({ success: false, message: "Internal Server Error", error: error.message });
+    }
+});
 
   this.resendOTP = BigPromise(async (req, res, next) => {
     const { email } = req.body;
@@ -339,20 +359,21 @@ function AuthController(database, logger) {
   this.oauthGoogleLogin = async (req, res) => {
     try {
       console.log("🚀 Starting OAuth Google login handler");
-      console.log("User object:", req.user);
+      //console.log("User object:", req.user);
 
       if (!req.user) {
         console.log("❌ No user in request");
         return res.redirect(process.env.FAILED_LOGIN_REDIRECT);
       }
+      const { user, isNewUser } = req.user;
 
-      const token = jwtUtil.generateJWT(req.user.id, req.user.email, req.user.providers);
-      console.log("🔐 Generated JWT:", token);
+      const token = jwtUtil.generateJWT(user.id, user.email, user.providers, isNewUser);
+      //console.log("🔐 Generated JWT:", token);
 
       res.cookie("jwt", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production", 
-        sameSite: "None",
+        secure: process.env.NODE_ENV === "production" ? true : false, // Secure only in production
+        sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax", // "Lax" allows cookies in local dev
         maxAge: CONST.maxAgeCookieExpired,
       });
 

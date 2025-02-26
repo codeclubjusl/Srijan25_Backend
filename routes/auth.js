@@ -12,6 +12,7 @@ router.post("/resendOtp", authController.resendOTP)
 router.put("/updateDetails", middlewares.isUserAuthenticated, authController.updateDetails);
 router.post("/logout", authController.logout);
 router.put("/changePassword", authController.changePassword);
+router.post("/addReferral", middlewares.isUserAuthenticated, authController.addReferral);
 
 const passport = require("passport")
 passport.debug = true;

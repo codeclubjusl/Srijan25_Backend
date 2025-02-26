@@ -75,6 +75,15 @@ const UserSchema = new Schema({
     type: String,
     default: "Jadavpur University",
   },
+  wishlist: {
+    type: [
+      {
+        type: ObjectId,
+        ref: "Event",
+      },
+    ],
+    default: [],
+  },
   registeredEvents: {
     type: [
       {

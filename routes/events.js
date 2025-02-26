@@ -33,15 +33,20 @@ const {
 const User = require("../models/user");
 const { isUserAuthenticated } = require("../middlewares");
 
-
 router.get("/", async (req, res) => {
     res.json({ message: "Events route" });
 });
 // POST a new event
 router.post("/new", isAdmin, async (req, res) => {
     try {
-        let { name, description, isSolo, minParticipants, maxParticipants, category } =
-            req.body;
+        let {
+            name,
+            description,
+            isSolo,
+            minParticipants,
+            maxParticipants,
+            category,
+        } = req.body;
         isSolo = isSolo == "true" ? true : false;
         if (
             !name ||
@@ -182,11 +187,8 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
         }
         const isSolo = event.isSolo;
         let { userId, membersEmails, groupName } = req.body;
-        membersEmails = isSolo
-            ? []
-            : membersEmails
-            ? JSON.parse(membersEmails)
-            : [];
+        console.log({ userId, membersEmails, groupName });
+        membersEmails = isSolo ? [] : membersEmails ? membersEmails : [];
 
         if (!userId) {
             return res.status(400).send({
@@ -288,71 +290,88 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
     }
 });
 
-router.post("/:slug/cancel-registration", isUserAuthenticated, async (req, res) => {
-    try {
-        const { data: event } = await getEventBySlug(req.params.slug);
-        if (!event) {
-            return res.status(404).send({
-                success: false,
-                message: "Event not found.",
-            });
-        }
-        const isSolo = event.isSolo;
-        const { userId } = req.body;
+router.post(
+    "/:slug/cancel-registration",
+    isUserAuthenticated,
+    async (req, res) => {
+        try {
+            const { data: event } = await getEventBySlug(req.params.slug);
+            if (!event) {
+                return res.status(404).send({
+                    success: false,
+                    message: "Event not found.",
+                });
+            }
+            const isSolo = event.isSolo;
+            const { userId } = req.body;
 
-        if (!userId) {
+            if (!userId) {
+                return res.status(400).send({
+                    success: false,
+                    message: "User ID is required for cancelling registration.",
+                });
+            }
+
+            if (isSolo) {
+                await removeUserFromParticipantList(event._id, userId);
+                await removeRegisteredEventFromUser(userId, event._id);
+
+                return res.status(200).send({
+                    success: true,
+                    message: `Participant (${userId}) registration cancelled successfully for event: ${event.name}`,
+                });
+            } else {
+                let resp = await getGroupByLeaderAndEvent(userId, event._id);
+                let group = resp.data;
+
+                let status = group.status;
+                if (status == "complete") {
+                    await removeGroupFromEvent(event._id, group._id);
+                    await removeRegisteredEventFromUser(
+                        group.creator,
+                        event._id
+                    );
+                    for (const member of group.members) {
+                        await removeRegisteredEventFromUser(
+                            member.user,
+                            event._id
+                        );
+                    }
+                } else {
+                    await removePendingGroupFromEvent(event._id, group._id);
+                    await removePendingEventFromUser(group.creator, event._id);
+                    for (const member of group.members) {
+                        await removePendingEventFromUser(
+                            member.user,
+                            event._id
+                        );
+                        await removeInvitation(
+                            member.user,
+                            event._id,
+                            group._id
+                        );
+                    }
+                }
+                await deleteGroupById(group._id);
+
+                return res.status(200).send({
+                    success: true,
+                    message: `Group (${group._id}) registration cancelled successfully for event: ${event.name}`,
+                });
+            }
+        } catch (error) {
+            console.error(
+                "Error cancelling participant registration for event:",
+                error
+            );
             return res.status(400).send({
                 success: false,
-                message: "User ID is required for cancelling registration.",
+                message:
+                    error.message ||
+                    "An error occurred while cancelling participant registration.",
             });
         }
-
-        if (isSolo) {
-            await removeUserFromParticipantList(event._id, userId);
-            await removeRegisteredEventFromUser(userId, event._id);
-
-            return res.status(200).send({
-                success: true,
-                message: `Participant (${userId}) registration cancelled successfully for event: ${event.name}`,
-            });
-        } else {
-            let resp = await getGroupByLeaderAndEvent(userId, event._id);
-            let group = resp.data;
-
-            let status = group.status;
-            if (status == "complete") {
-                await removeGroupFromEvent(event._id, group._id);
-                await removeRegisteredEventFromUser(group.creator, event._id);
-                for (const member of group.members) {
-                    await removeRegisteredEventFromUser(member.user, event._id);
-                }
-            } else {
-                await removePendingGroupFromEvent(event._id, group._id);
-                await removePendingEventFromUser(group.creator, event._id);
-                for (const member of group.members) {
-                    await removePendingEventFromUser(member.user, event._id);
-                    await removeInvitation(member.user, event._id, group._id);
-                }
-            }
-            await deleteGroupById(group._id);
-
-            return res.status(200).send({
-                success: true,
-                message: `Group (${group._id}) registration cancelled successfully for event: ${event.name}`,
-            });
-        }
-    } catch (error) {
-        console.error(
-            "Error cancelling participant registration for event:",
-            error
-        );
-        return res.status(400).send({
-            success: false,
-            message:
-                error.message ||
-                "An error occurred while cancelling participant registration.",
-        });
     }
-});
+);
 
 module.exports = router;

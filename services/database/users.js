@@ -1,5 +1,6 @@
 const { default: mongoose } = require("mongoose");
 const Users = require("../../models/user");
+const Group = require("../../models/groups");
 
 const getUserByEmail = async (email) => {
     try {
@@ -162,7 +163,7 @@ const removeInvitation = async (userId, eventId, groupId) => {
             userId,
             {
                 $pull: {
-                    invitations: { eventId, groupId },
+                    invitations: { event: eventId, group: groupId },
                 },
             },
             { new: true }
@@ -183,11 +184,12 @@ const removeInvitation = async (userId, eventId, groupId) => {
 const getInvitations = async (userId) => {
     try {
         const user = await Users.findById(userId)
-            .populate("invitations.event", "name")
+            .populate("invitations.event", "name slug")
             .populate("invitations.group", "name");
         if (!user || user.length === 0) {
             throw new Error("User not found.");
         }
+        console.log("Invitations for user:", user.invitations);
         return {
             success: true,
             data: user.invitations.filter(
@@ -263,6 +265,152 @@ const rejectInvitation = async (groupId, userId) => {
     }
 };
 
+const getAllParticipatingEvents = async (userId) => {
+    try {
+        const user = await Users.findById(userId).populate(
+            "registeredEvents",
+            "name"
+        );
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        return {
+            success: true,
+            data: user.registeredEvents,
+        };
+    } catch (error) {
+        console.error(
+            "Error getting all participating events for user:",
+            error
+        );
+        throw new Error(
+            error.message ||
+                "An error occurred while getting all participating events for user."
+        );
+    }
+};
+
+const getAllPendingEvents = async (userId) => {
+    try {
+        const user = await Users.findById(userId).populate(
+            "pendingEvents",
+            "name"
+        );
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        return {
+            success: true,
+            data: user.pendingEvents,
+        };
+    } catch (error) {
+        console.error("Error getting all pending events for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while getting all pending events for user."
+        );
+    }
+};
+
+const getAllGroupInfo = async (userId) => {
+    try {
+        const user = await Users.findById(userId).populate("invitations.group");
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        return {
+            success: true,
+            data: user.invitations,
+        };
+    } catch (error) {
+        console.error("Error getting group info for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while getting group info for user."
+        );
+    }
+};
+
+const getGroupInfoForEvent = async (userId, eventId) => {
+    try {
+        console.log("Getting group info for user:", userId, eventId);
+        const group = await Group.findOne({
+            event: eventId,
+            $or: [{ "members.user": userId }, { creator: userId }],
+        }).populate("members.user").populate("creator");
+        if (!group || group.length === 0) {
+            throw new Error("Group not found.");
+        }
+        return {
+            success: true,
+            data: group,
+        };
+    } catch (error) {
+        console.error("Error getting group info for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while getting group info for user."
+        );
+    }
+};
+
+const getStatusOfParticipation = async (userId, eventId) => {
+    try {
+        const user = await Users.findById(userId);
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        const registeredEvents = user.registeredEvents;
+        const pendingEvents = user.pendingEvents;
+        console.log({
+            registeredEvents,
+            pendingEvents,
+        });
+        if (
+            registeredEvents
+                .map((item) => item.toString())
+                .includes(eventId.toString())
+        ) {
+            return "registered";
+        } else if (
+            pendingEvents
+                .map((item) => item.toString())
+                .includes(eventId.toString())
+        ) {
+            return "pending";
+        } else {
+            return "not-participating";
+        }
+    } catch (error) {
+        console.error("Error getting status of participation for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while getting status of participation for user."
+        );
+    }
+};
+
+const canUnregisterForGroup = async (userId, eventId) => {
+    // only leader of group can unregister
+    try {
+        const isLeaderOfGroup = await Group.findOne({
+            event: eventId,
+            creator: userId,
+        });
+        console.log("isLeaderOfGroup:", isLeaderOfGroup, userId);
+        if (!isLeaderOfGroup || isLeaderOfGroup.length === 0) {
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.error("Error checking if user can unregister:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while checking if user can unregister."
+        );
+    }
+};
+
 module.exports = {
     addRegisteredEventToUser,
     removeRegisteredEventFromUser,
@@ -275,4 +423,10 @@ module.exports = {
     acceptInvitation,
     rejectInvitation,
     getUserByEmail,
+    getAllParticipatingEvents,
+    getAllPendingEvents,
+    getAllGroupInfo,
+    getGroupInfoForEvent,
+    getStatusOfParticipation,
+    canUnregisterForGroup,
 };

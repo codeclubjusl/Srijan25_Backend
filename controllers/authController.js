@@ -78,6 +78,8 @@ function AuthController(database, logger) {
       secure: process.env.NODE_ENV === "production", 
       sameSite: "None",
       maxAge: CONST.maxAgeCookieExpired,
+      secure: true,
+      httpOnly: true,
     });
     this.logger.info(`Session started for user [${user.email}]`);
 
@@ -445,6 +447,7 @@ function AuthController(database, logger) {
 
 const logger = require("../services/log/logger");
 const database = require("../services/database");
+const { http } = require("winston");
 const authController = new AuthController(database, logger);
 
 module.exports = authController;

@@ -16,7 +16,6 @@ const UserSchema = new Schema({
   },
   password: {
     type: String,
-    // required: [true, "Please enter a password"],
     maxlength: [64, "Maximum password length is 64"],
     select: false,
   },
@@ -30,13 +29,12 @@ const UserSchema = new Schema({
   },
   emailVerified: {
     type: Boolean,
-    default: false, // Ensures it defaults to false
+    default: false, 
   },
   phone: {
     type: String,
     unique: true,
     sparse: true,
-    // required: [true, "Please provide mobile number"],
     validate: {
       validator: function(v) {
         return isMobilePhone(v, "en-IN");
@@ -48,7 +46,11 @@ const UserSchema = new Schema({
   consent: {
     type: String,
     enum: ["y", "n"],
-    // required: [true, "Consent is required"]
+    default: "y",
+  },
+  referralCount: {
+    type: Number,
+    default: 0,
   },
   photo: {
     url: String,
@@ -74,6 +76,15 @@ const UserSchema = new Schema({
   institution: {
     type: String,
     default: "Jadavpur University",
+  },
+  wishlist: {
+    type: [
+      {
+        type: ObjectId,
+        ref: "Event",
+      },
+    ],
+    default: [],
   },
   registeredEvents: {
     type: [

@@ -289,7 +289,7 @@ const createNewEvent = async (
             name,
             description,
             isSolo,
-            slug: name.toLowerCase().replaceAll(" ", "-"),
+            slug: name.toLowerCase().replaceAll(" ", "_"),
             minParticipants,
             maxParticipants,
             category,

@@ -1,7 +1,15 @@
 const express = require("express")
+const fileUpload = require("express-fileupload")
 const router = express.Router()
 const authController = require("../controllers/authController")
 const middlewares = require("../middlewares")
+
+router.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  })
+);
 
 router.post("/login", authController.login)
 router.post("/register", authController.register)

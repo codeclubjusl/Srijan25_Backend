@@ -32,6 +32,7 @@ const {
     getEventBySlug,
 
 } = require("../services/database/events");
+const notificationService = require("../services/notification");
 
 const router = express.Router();
 
@@ -270,6 +271,11 @@ router.post(
                     );
                 }
             }
+            notificationService.addNotificationToUser(
+                user.id,
+                "Accepeted by member for event",
+                `${user.name} has accepted your invitation .`,
+            );
             return res.status(200).json({
                 success: true,
                 data: updatedUser,
@@ -297,6 +303,11 @@ router.post(
             for (let member of groupInfo.data.members) {
                 await removePendingEventFromUser(member.user, event);
             }
+            notificationService.addNotificationToUser(
+                user.id,
+                "Declined by member for event",
+                `${user.name} has declined your invitation .`,
+            );
             return res.status(200).json({
                 success: true,
                 data: updatedUser,

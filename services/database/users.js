@@ -19,6 +19,8 @@ const getUserByEmail = async (email) => {
     }
 };
 
+// event related function 
+
 const addRegisteredEventToUser = async (userId, eventId) => {
     try {
         const user = await Users.findByIdAndUpdate(

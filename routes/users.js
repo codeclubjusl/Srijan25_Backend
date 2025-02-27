@@ -264,7 +264,7 @@ router.post(
                     event
                 );
                 await moveGroupFromPendingToParticipantGroups(event, groupId);
-                for (let member of groupInfo.members) {
+                for (let member of groupInfo.data.members) {
                     await moveEventFromPendingToRegisteredEventForUser(
                         member.user,
                         event
@@ -311,13 +311,13 @@ router.post(
                 if (member.user != user.id)
                     notificationService.addNotificationToUser(
                         member.user,
-                        "Accepeted by member for event",
+                        "Rejected by member for event",
                         `${user.name} has accepted your invitation .`,
                     );
             }
                 notificationService.addNotificationToUser(
                     user.id,
-                    `Declined inivtaion for ${groupInfo.data.name}`,
+                    `Declined inivitaion for ${groupInfo.data.name}`,
                     `you have declined your invitation for ${groupInfo.data.name}.`,
                 );
             

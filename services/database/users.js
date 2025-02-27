@@ -187,7 +187,7 @@ const getInvitations = async (userId) => {
     try {
         const user = await Users.findById(userId)
             .populate("invitations.event", "name slug")
-            .populate("invitations.group", "name");
+            .populate("invitations.group", "name status");
         if (!user || user.length === 0) {
             throw new Error("User not found.");
         }
@@ -195,7 +195,9 @@ const getInvitations = async (userId) => {
         return {
             success: true,
             data: user.invitations.filter(
-                (invitation) => invitation.status === "pending"
+                (invitation) =>
+                    invitation.status === "pending" &&
+                    invitation.group.status !== "rejected"
             ),
         };
     } catch (error) {
@@ -339,7 +341,9 @@ const getGroupInfoForEvent = async (userId, eventId) => {
         const group = await Group.findOne({
             event: eventId,
             $or: [{ "members.user": userId }, { creator: userId }],
-        }).populate("members.user").populate("creator");
+        })
+            .populate("members.user")
+            .populate("creator");
         if (!group || group.length === 0) {
             throw new Error("Group not found.");
         }
@@ -413,6 +417,67 @@ const canUnregisterForGroup = async (userId, eventId) => {
     }
 };
 
+const addToWishlist = async (userId, eventId) => {
+    try {
+        // no need to push if already there
+        const user = await Users.findByIdAndUpdate(
+            userId,
+            { $addToSet: { wishlist: eventId } },
+            { new: true }
+        );
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        return { success: true, data: user.wishlist };
+    } catch (error) {
+        console.error("Error adding event to wishlist for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while adding event to wishlist for user."
+        );
+    }
+}
+
+const removeFromWishlist = async (userId, eventId) => {
+    try {
+        const user = await Users.findByIdAndUpdate(
+            userId,
+            { $pull: { wishlist: eventId } },
+            { new: true }
+        );
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        return { success: true, data: user.wishlist };
+    } catch (error) {
+        console.error("Error removing event from wishlist for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while removing event from wishlist for user."
+        );
+    }
+}
+
+const getWishlist = async (userId) => {
+    try {
+        const user = await Users.findById(userId).populate("wishlist", "name slug");
+        if (!user || user.length === 0) {
+            throw new Error("User not found.");
+        }
+        return {
+            success: true,
+            data: user.wishlist,
+        };
+    } catch (error) {
+        console.error("Error getting wishlist for user:", error);
+        throw new Error(
+            error.message ||
+                "An error occurred while getting wishlist for user."
+        );
+    }
+}
+
+
 module.exports = {
     addRegisteredEventToUser,
     removeRegisteredEventFromUser,
@@ -431,4 +496,7 @@ module.exports = {
     getGroupInfoForEvent,
     getStatusOfParticipation,
     canUnregisterForGroup,
+    addToWishlist,
+    removeFromWishlist,
+    getWishlist
 };

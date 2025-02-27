@@ -12,6 +12,9 @@ const {
     getGroupInfoForEvent,
     getStatusOfParticipation,
     canUnregisterForGroup,
+    addToWishlist,
+    removeFromWishlist,
+    getWishlist,
 } = require("../services/database/users");
 const {
     acceptInvitation,
@@ -131,10 +134,62 @@ router.get("/users/pending", isUserAuthenticated, async (req, res) => {
     }
 });
 router.get(
-    "/users/:id/wishlist",
+    "/users/wishlist",
     isUserAuthenticated,
-    userController.getUserById
+    async (req, res) => {
+        try {
+            let { data: user } = await getUserByEmail(req.email);
+            if (!user) {
+                throw new Error("User not found.");
+            }
+            let wishlist = await getWishlist(user.id);
+            return res.status(200).json(wishlist);
+        } catch (error) {
+            console.error("Error getting wishlist for user:", error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
 );
+
+router.post(
+    "/users/wishlist/:slug",
+    isUserAuthenticated,
+    async (req, res) => {
+        try {
+            let { data: user } = await getUserByEmail(req.email);
+            let { data: event } = await getEventBySlug(req.params.slug);
+            if (!user) {
+                throw new Error("User not found.");
+            }
+            const updatedUser = await addToWishlist(user.id, event._id);
+            return res.status(200).json(updatedUser);
+        }
+        catch (error) {
+            console.error("Error updating user wishlist:", error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
+)
+
+router.delete(
+    "/users/wishlist/:slug",
+    isUserAuthenticated,
+    async (req, res) => {
+        try {
+            let { data: user } = await getUserByEmail(req.email);
+            let { data: event } = await getEventBySlug(req.params.slug);
+            if (!user) {
+                throw new Error("User not found.");
+            }
+            const updatedUser = await removeFromWishlist(user.id, event._id);
+            return res.status(200).json(updatedUser);
+        }
+        catch (error) {
+            console.error("Error updating user wishlist:", error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
+)
 
 router.get(
     "/users/group-info-for-event/:slug",
@@ -244,7 +299,8 @@ router.post(
             const { event } = await rejectInvitation(groupId, user.id);
             await removePendingEventFromUser(user.id, event);
             await removePendingGroupFromEvent(event, groupId);
-            for (let member of groupInfo.members) {
+            await removePendingEventFromUser(groupInfo.data.creator, event);
+            for (let member of groupInfo.data.members) {
                 await removePendingEventFromUser(member.user, event);
             }
             notificationService.addNotificationToUser(

@@ -280,7 +280,7 @@ router.post(
             for (let member of groupInfo.data.members) {
                 if (member.user._id.toString() !== user.id.toString())
                     notificationService.addNotificationToUser(
-                        member.user,
+                        member.user._id,
                         "Accepeted by member for event",
                         `${user.name} has accepted your invitation .`,
                     );
@@ -326,7 +326,7 @@ router.post(
             for (let member of groupInfo.data.members) {
                 await removePendingEventFromUser(member.user._id, event);
                 // for members
-                if (member.user.toString() != user.id.toString())
+                if (member.user._id.toString() != user.id.toString())
                     notificationService.addNotificationToUser(
                         member.user._id,
                         "Rejected by member for event",

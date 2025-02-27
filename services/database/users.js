@@ -4,9 +4,9 @@ const Group = require("../../models/groups");
 
 const getUserByEmail = async (email) => {
     try {
-        console.log("Getting user by email:", email);
+        //console.log("Getting user by email:", email);
         const user = (await Users.findOne({ email })).toJSON();
-        console.log("User found:", user);
+        //console.log("User found:", user);
         if (!user || user.length === 0) {
             throw new Error("User not found.");
         }
@@ -191,7 +191,7 @@ const getInvitations = async (userId) => {
         if (!user || user.length === 0) {
             throw new Error("User not found.");
         }
-        console.log("Invitations for user:", user.invitations);
+        //console.log("Invitations for user:", user.invitations);
         return {
             success: true,
             data: user.invitations.filter(
@@ -337,7 +337,8 @@ const getAllGroupInfo = async (userId) => {
 
 const getGroupInfoForEvent = async (userId, eventId) => {
     try {
-        console.log("Getting group info for user:", userId, eventId);
+        //:w
+        //console.log("Getting group info for user:", userId, eventId);
         const group = await Group.findOne({
             event: eventId,
             $or: [{ "members.user": userId }, { creator: userId }],
@@ -369,10 +370,10 @@ const getStatusOfParticipation = async (userId, eventId) => {
         }
         const registeredEvents = user.registeredEvents;
         const pendingEvents = user.pendingEvents;
-        console.log({
-            registeredEvents,
-            pendingEvents,
-        });
+        // console.log({
+        //     registeredEvents,
+        //     pendingEvents,
+        // });
         if (
             registeredEvents
                 .map((item) => item.toString())
@@ -404,7 +405,7 @@ const canUnregisterForGroup = async (userId, eventId) => {
             event: eventId,
             creator: userId,
         });
-        console.log("isLeaderOfGroup:", isLeaderOfGroup, userId);
+        //console.log("isLeaderOfGroup:", isLeaderOfGroup, userId);
         if (!isLeaderOfGroup || isLeaderOfGroup.length === 0) {
             return false;
         }

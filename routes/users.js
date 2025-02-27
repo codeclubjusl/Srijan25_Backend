@@ -270,22 +270,33 @@ router.post(
                 );
                 for (let member of groupInfo.data.members) {
                     await moveEventFromPendingToRegisteredEventForUser(
-                        member.user,
+                        member.user._id,
                         event
                     );
-                    if (member.user != user.id)
-                        notificationService.addNotificationToUser(
-                            member.user,
-                            "Accepeted by member for event",
-                            `${user.name} has accepted your invitation .`,
-                        );
                 } 
-                notificationService.addNotificationToUser(
-                    user.id,
-                    `You accepted invitation for ${groupInfo.data.name}`,
-                    `${user.name} has accepted your invitation .`,
-                );
             }
+
+            // for members
+            for (let member of groupInfo.data.members) {
+                if (member.user._id.toString() !== user.id.toString())
+                    notificationService.addNotificationToUser(
+                        member.user,
+                        "Accepeted by member for event",
+                        `${user.name} has accepted your invitation .`,
+                    );
+            }
+            // for leader
+            notificationService.addNotificationToUser(
+                groupInfo.data.creator,
+                `Accepeted by member for event`,
+                `${user.name} has accepted invitation for your team.`,
+            );
+            // for acceptor
+            notificationService.addNotificationToUser(
+                user.id,
+                `You accepted invitation for ${groupInfo.data.name}`,
+                `${user.name} has accepted invitation .`,
+            );
             return res.status(200).json({
                 success: true,
                 data: updatedUser,
@@ -310,20 +321,30 @@ router.post(
             await removePendingEventFromUser(user.id, event);
             await removePendingGroupFromEvent(event, groupId);
             await removePendingEventFromUser(groupInfo.data.creator, event);
+
+            console.log("rejected -> ",groupInfo.data.members ,groupInfo.data.creator,user.id)
             for (let member of groupInfo.data.members) {
-                await removePendingEventFromUser(member.user, event);
-                if (member.user != user.id)
+                await removePendingEventFromUser(member.user._id, event);
+                // for members
+                if (member.user.toString() != user.id.toString())
                     notificationService.addNotificationToUser(
-                        member.user,
+                        member.user._id,
                         "Rejected by member for event",
                         `${user.name} has accepted your invitation .`,
                     );
             }
-                notificationService.addNotificationToUser(
-                    user.id,
-                    `Declined inivitaion for ${groupInfo.data.name}`,
-                    `you have declined your invitation for ${groupInfo.data.name}.`,
-                );
+            // for leader
+            notificationService.addNotificationToUser(
+                groupInfo.data.created,
+                "Rejected by member for event",
+                `${user.name} has accepted your invitation for your team.`,
+            );
+            // for rejector
+            notificationService.addNotificationToUser(
+                user.id,
+                `Declined inivitaion for ${groupInfo.data.name}`,
+                `you have declined your invitation for ${groupInfo.data.name}.`,
+            );
             
             return res.status(200).json({
                 success: true,

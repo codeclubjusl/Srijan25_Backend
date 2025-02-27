@@ -191,7 +191,7 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
         }
         const isSolo = event.isSolo;
         let { userId, membersEmails, groupName } = req.body;
-        console.log({ userId, membersEmails, groupName });
+        //console.log({ userId, membersEmails, groupName });
         membersEmails = isSolo ? [] : membersEmails ? membersEmails : [];
 
         if (!userId) {
@@ -287,7 +287,7 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
                 // putting notification 
                 notificationService.addNotificationToUser(
                     userId,
-                    `Registered to an ${event.name}`,
+                    `Registered to ${event.name}`,
                     `Your team ${group.name} has been successfully added to the ${event.name}. 
                     Please ask your team members to complete invitation.`
                 );

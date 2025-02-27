@@ -339,6 +339,7 @@ const getGroupInfoForEvent = async (userId, eventId) => {
         const group = await Group.findOne({
             event: eventId,
             $or: [{ "members.user": userId }, { creator: userId }],
+            status: { $ne: "rejected" },
         })
             .populate("members.user")
             .populate("creator");

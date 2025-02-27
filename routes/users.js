@@ -335,7 +335,7 @@ router.post(
             }
             // for leader
             notificationService.addNotificationToUser(
-                groupInfo.data.created,
+                groupInfo.data.creator,
                 "Rejected by member for event",
                 `${user.name} has accepted your invitation for your team.`,
             );

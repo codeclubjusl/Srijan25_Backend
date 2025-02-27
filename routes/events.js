@@ -222,7 +222,7 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
         }
 
         if (
-            !(membersEmails.length < event.minParticipants - 1) &&
+            membersEmails.length < event.minParticipants - 1 ||
             membersEmails.length > event.maxParticipants - 1
         ) {
             return res.status(400).send({

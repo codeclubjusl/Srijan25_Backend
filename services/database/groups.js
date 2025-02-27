@@ -57,7 +57,7 @@ const getGroupById = async (id) => {
     try {
         const group = await Groups.findById(id)
             .populate("creator")
-            .populate("members.user");
+            .populate("members.user"); // why did i do this?
         if (!group || group.length === 0) {
             throw new Error("Group not found.");
         }

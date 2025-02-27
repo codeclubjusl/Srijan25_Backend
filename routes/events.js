@@ -307,7 +307,7 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
                     notificationService.addNotificationToUser(
                         member.user,
                         "Inviation",
-                        `You were invited to team ${group._name} for ${event.name}`
+                        `You were invited to team ${group.name} for ${event.name}`
                     );
                 }
             }

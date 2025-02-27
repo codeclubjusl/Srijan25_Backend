@@ -269,13 +269,19 @@ router.post(
                         member.user,
                         event
                     );
-                }
+                    if (member.user != user.id)
+                        notificationService.addNotificationToUser(
+                            member.user,
+                            "Accepeted by member for event",
+                            `${user.name} has accepted your invitation .`,
+                        );
+                } 
+                notificationService.addNotificationToUser(
+                    user.id,
+                    `You accepted invitation for ${groupInfo.data.name}`,
+                    `${user.name} has accepted your invitation .`,
+                );
             }
-            notificationService.addNotificationToUser(
-                user.id,
-                "Accepeted by member for event",
-                `${user.name} has accepted your invitation .`,
-            );
             return res.status(200).json({
                 success: true,
                 data: updatedUser,
@@ -302,12 +308,19 @@ router.post(
             await removePendingEventFromUser(groupInfo.data.creator, event);
             for (let member of groupInfo.data.members) {
                 await removePendingEventFromUser(member.user, event);
+                if (member.user != user.id)
+                    notificationService.addNotificationToUser(
+                        member.user,
+                        "Accepeted by member for event",
+                        `${user.name} has accepted your invitation .`,
+                    );
             }
-            notificationService.addNotificationToUser(
-                user.id,
-                "Declined by member for event",
-                `${user.name} has declined your invitation .`,
-            );
+                notificationService.addNotificationToUser(
+                    user.id,
+                    `Declined inivtaion for ${groupInfo.data.name}`,
+                    `you have declined your invitation for ${groupInfo.data.name}.`,
+                );
+            
             return res.status(200).json({
                 success: true,
                 data: updatedUser,

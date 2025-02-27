@@ -93,13 +93,13 @@ function UserDatabaseMongoDB(dbConnectionString) {
       const savedUser = await newUser.save();
   
     // Increment referral count only after user is successfully created
-    if (user.campusReferralCode) {
+    if (user.campusReferralCode && user.email !== campusReferrals[user.campusReferralCode]) {
       console.log("updating referral");
       console.log("updating referral for code:", user.campusReferralCode);
       console.log("Current referral data:", campusReferrals[user.campusReferralCode]);
       await this.incrementReferralCount(user.campusReferralCode, campusReferrals);
+      console.log("Referral count updated successfully!");
     }
-    console.log("Referral count updated successfully!");
       return savedUser.toJSON();
     } catch (error) {
       console.error("Error updating referral count:", error);

@@ -61,7 +61,12 @@ function AuthController(database, logger) {
     if (!user) {
       const message = "Email not found";
       this.logger.info(`Login rejected [${email}]. ${message}`);
-      return res.status(CONST.httpStatus.NOT_FOUND).json({ error: message });
+      return res.status(CONST.httpStatus.NOT_FOUND).json({ 
+        error: { 
+          message, 
+          field: "email" 
+        } 
+      });
     }
     const isValidPassword = await user.isValidatedPassword(password);
 
@@ -69,7 +74,12 @@ function AuthController(database, logger) {
       const message = "Wrong password";
       console.log(message);
       this.logger.info(`Login rejected [${email}]. ${message}`);
-      return res.status(CONST.httpStatus.UNAUTHORIZED).json({ error: message });
+      return res.status(CONST.httpStatus.UNAUTHORIZED).json({ 
+        error: { 
+          message, 
+          field: "loginPassword" 
+        } 
+      });
     }
 
     const token = jwtUtil.generateJWT(user.id, user.email);

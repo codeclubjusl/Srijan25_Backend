@@ -185,7 +185,7 @@ const getInvitations = async (userId) => {
     try {
         const user = await Users.findById(userId)
             .populate("invitations.event", "name slug")
-            .populate("invitations.group", "name");
+            .populate("invitations.group", "name status");
         if (!user || user.length === 0) {
             throw new Error("User not found.");
         }
@@ -193,7 +193,9 @@ const getInvitations = async (userId) => {
         return {
             success: true,
             data: user.invitations.filter(
-                (invitation) => invitation.status === "pending"
+                (invitation) =>
+                    invitation.status === "pending" &&
+                    invitation.group.status !== "rejected"
             ),
         };
     } catch (error) {
@@ -337,7 +339,9 @@ const getGroupInfoForEvent = async (userId, eventId) => {
         const group = await Group.findOne({
             event: eventId,
             $or: [{ "members.user": userId }, { creator: userId }],
-        }).populate("members.user").populate("creator");
+        })
+            .populate("members.user")
+            .populate("creator");
         if (!group || group.length === 0) {
             throw new Error("Group not found.");
         }

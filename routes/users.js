@@ -238,7 +238,8 @@ router.post(
             const { event } = await rejectInvitation(groupId, user.id);
             await removePendingEventFromUser(user.id, event);
             await removePendingGroupFromEvent(event, groupId);
-            for (let member of groupInfo.members) {
+            await removePendingEventFromUser(groupInfo.data.creator, event);
+            for (let member of groupInfo.data.members) {
                 await removePendingEventFromUser(member.user, event);
             }
             return res.status(200).json({

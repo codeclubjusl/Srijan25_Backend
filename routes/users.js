@@ -264,6 +264,10 @@ router.post(
                     event
                 );
                 await moveGroupFromPendingToParticipantGroups(event, groupId);
+                await moveEventFromPendingToRegisteredEventForUser(
+                    groupInfo.data.creator,
+                    event
+                );
                 for (let member of groupInfo.data.members) {
                     await moveEventFromPendingToRegisteredEventForUser(
                         member.user,

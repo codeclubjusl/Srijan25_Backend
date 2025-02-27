@@ -7,14 +7,14 @@ class NotificationService {
 
   async addNotificationToUser(userId, title, description) {
     try {
-      console.log("adding notification called");
+      //console.log("adding notification called");
       const user = await User.findById(userId);
       if (!user) throw new Error('User not found');
       
 
       user.notifications.push({ title, description });
       const res = await user.save();
-      console.log("res of the notification", res);
+      //console.log("res of the notification", res);
       return user.notifications[user.notifications.length - 1];
     } catch (error) {
       throw new Error(error.message);
@@ -42,7 +42,7 @@ class NotificationService {
       const user = await User.findById( userId);
       if (!user) throw new Error('User not found');
       
-      console.log("got users -> ", user)
+      //console.log("got users -> ", user)
       return user.notifications?? [];
     } catch (error) {
       throw new Error(error.message);

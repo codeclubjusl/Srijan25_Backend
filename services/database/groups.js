@@ -8,7 +8,7 @@ const createGroup = async (leader, memberEmails, name, event) => {
         if (!leaderUser) {
             throw new Error("Leader not found.");
         }
-        console.log("leader", leaderUser);
+        //console.log("leader", leaderUser);
         let memberIds = [];
         for (const member of memberEmails) {
             let user = await Users.find({ email: member });

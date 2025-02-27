@@ -32,6 +32,7 @@ const {
 } = require("../services/database/groups");
 const User = require("../models/user");
 const { isUserAuthenticated } = require("../middlewares");
+const notificationService = require("../services/notification");
 
 router.get("/", async (req, res) => {
     res.json({ message: "Events route" });
@@ -255,6 +256,13 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
             await addUserToParticipantList(event._id, userId);
             await addRegisteredEventToUser(userId, event._id);
 
+            // putting notification 
+            notificationService.addNotificationToUser(
+                userId,
+                `Registered successfully for ${event.name}`,
+                `You've successfully registered for ${event.name}. We look forward to seeing you there!"`
+            );
+
             return res.status(200).send({
                 success: true,
                 message: `Participant (${userId}) registered successfully to event: ${event.name}`,
@@ -269,12 +277,38 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
             if (group.status == "complete") {
                 await addGroupToEvent(event._id, group._id);
                 await addRegisteredEventToUser(userId, event._id);
+                notificationService.addNotificationToUser(
+                    userId,
+                    `Registered to an ${event.name}`,
+                    `Your team ${group.name} has been successfully registered to the ${event.name}. `
+                );
             } else {
                 await addPendingGroupToEvent(event._id, group._id);
+                // putting notification 
+                notificationService.addNotificationToUser(
+                    userId,
+                    `Registered to an ${event.name}`,
+                    `Your team ${group.name} has been successfully added to the ${event.name}. 
+                    Please ask your team members to complete invitation.`
+                );
+                for (const member of group.members) {
+                    notificationService.addNotificationToUser(
+                        member.user,
+                        `Registered to an ${event.name}`,
+                        `Your were added to team ${group.name} for ${event.name}. 
+                        Please complete the invitation at your earliest convenience.`
+                    );
+                }
                 await addPendingEventToUser(userId, event._id);
                 for (const member of group.members) {
                     await addPendingEventToUser(member.user, event._id);
                     await putInvitation(member.user, event._id, group._id);
+                    // putting notification 
+                    notificationService.addNotificationToUser(
+                        member.user,
+                        "Inviation",
+                        `You were invited to team ${group._name} for ${event.name}`
+                    );
                 }
             }
             return res.status(200).send({
@@ -318,7 +352,12 @@ router.post(
             if (isSolo) {
                 await removeUserFromParticipantList(event._id, userId);
                 await removeRegisteredEventFromUser(userId, event._id);
-
+            // putting notification 
+            notificationService.addNotificationToUser(
+                userId,
+                `UnRegistered successfully for ${event.name}`,
+                `You've successfully unregistered for ${event.name}`
+            );
                 return res.status(200).send({
                     success: true,
                     message: `Participant (${userId}) registration cancelled successfully for event: ${event.name}`,
@@ -340,6 +379,7 @@ router.post(
                             event._id
                         );
                     }
+
                 } else {
                     await removePendingGroupFromEvent(event._id, group._id);
                     await removePendingEventFromUser(group.creator, event._id);
@@ -355,6 +395,24 @@ router.post(
                         );
                     }
                 }
+                // notification 
+                //leader 
+                notificationService.addNotificationToUser(
+                    userId,
+                    `UnRegistered from ${event.name}`,
+                    `Your team ${group.name} has been successfully unregistered from ${event.name}`
+                );
+
+                // members 
+                for (const member of group.members) {
+
+                    notificationService.addNotificationToUser(
+                        member.user,
+                        `UnRegistered from ${event.name}`,
+                        `Your team ${group.name} has been successfully unregistered from ${event.name}`
+                    );
+                }
+
                 await deleteGroupById(group._id);
 
                 return res.status(200).send({

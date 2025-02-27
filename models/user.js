@@ -4,7 +4,7 @@ const logger = require("../services/log/logger");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const CONST = require("../utils/constants");
-
+const NotificationSchema = require("./notification");
 const UserSchema = new Schema({
   id: {
     type: ObjectId,
@@ -124,6 +124,7 @@ const UserSchema = new Schema({
     ],
     default: [],
   },
+  notifications: [NotificationSchema],
   merchandise: {
     type: new Schema({
       size: {

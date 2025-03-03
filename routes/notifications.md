@@ -32,7 +32,14 @@ ${backURI}/api/v1/notifications/paginated?page=1,limit=2
 ```
 > next and prev are optional fields that are passed
 
-> if anything is wrong like email not found or notification not found then the response will be like
+```json
+"data":{
+  "notifications":[]
+}
+```
+
+
+> if anything is wrong 
 
 ```json
   "data":{}

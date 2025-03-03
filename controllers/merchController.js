@@ -153,7 +153,6 @@ function MerchController(database) {
         email, size, color
       } = req.body;
 
-      /*
       const jwtToken = req.cookies.jwt;
       const { email: dbEmail } = decodeJWT(jwtToken);
       const { merchandise, phone } = await this.database.getUserByEmail(email);
@@ -162,7 +161,6 @@ function MerchController(database) {
           message: "merch already added",
         });
       }
-      */
 
       const image = req.file;
       console.log(image, nameOnShirt, college, department, year);
@@ -177,7 +175,7 @@ function MerchController(database) {
       //email_phone_nameOnshirt_size_Color
 
       // add phone number
-      const fileName = `${email}_${nameOnShirt}_${size}_${color}.${fileExtension}`;
+      const fileName = `${dbEmail}_${nameOnShirt}_${size}_${color}.${fileExtension}`;
 
       const params = {
         Bucket: bucketName,

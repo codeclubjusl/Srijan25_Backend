@@ -1,4 +1,5 @@
 const User = require("../../models/user");
+const { getUserByEmail } = require("../database/users");
 
 class NotificationService {
   constructor() {
@@ -47,6 +48,40 @@ class NotificationService {
     } catch (error) {
       throw new Error(error.message);
       return [];
+    }
+  }
+  async paginatedListing(email, page, limit) {
+    try {
+      const result = {};
+      const startIndex = (parseInt(page) -1) * limit;
+      const endIndex = parseInt(page) * limit;
+
+      const user = await User.findOne({ email: email }, { notifications: 1 })
+      console.log(user);
+
+      if (!user) return result;
+      if(!user.notifications){
+        return result;
+      }
+
+      if(startIndex > 0){
+        result.prev = {
+          page: page-1,
+          limit : limit
+        }
+      }
+      if(endIndex < user.notifications.length){
+        result.next = {
+          page: page+1,
+          limit : limit
+        }
+      }
+      result.notifications = user.notifications.slice(startIndex, endIndex);
+      return result;
+
+    } catch (error) {
+      console.error(error);
+      return {};
     }
   }
 }

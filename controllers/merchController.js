@@ -150,11 +150,16 @@ function MerchController(database) {
         college,
         department,
         year,
-        email, size, color
+        size, color
       } = req.body;
 
       const jwtToken = req.cookies.jwt;
-      const { email: dbEmail } = decodeJWT(jwtToken);
+      const { email } = decodeJWT(jwtToken);
+      if (!email) {
+        return res.status(CONST.httpStatus.BAD_REQUEST).json({
+          message: "email not found",
+        });
+      }
       const { merchandise, phone } = await this.database.getUserByEmail(email);
       if (merchandise) {
         return res.status(CONST.httpStatus.BAD_REQUEST).json({
@@ -175,7 +180,7 @@ function MerchController(database) {
       //email_phone_nameOnshirt_size_Color
 
       // add phone number
-      const fileName = `${dbEmail}_${nameOnShirt}_${size}_${color}.${fileExtension}`;
+      const fileName = `${email}_${nameOnShirt}_${size}_${color}.${fileExtension}`;
 
       const params = {
         Bucket: bucketName,

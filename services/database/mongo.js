@@ -255,7 +255,7 @@ function UserDatabaseMongoDB(dbConnectionString) {
     let merchandise;
     if(!data.merchandise){
       merchandise = await this.addMerchToUser(email, size, color);
-      return merchandise._id;
+      return merchandise.merchandise._id;
     }
     else{
       merchandise = await this.addMerchToArray(email, size, color);

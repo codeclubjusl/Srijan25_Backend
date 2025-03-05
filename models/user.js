@@ -131,10 +131,7 @@ const UserSchema = new Schema({
     type: MerchandiseSchema,
     default: null,
   },
-  merchandise2:{
-    type:[MerchandiseSchema],
-    default:null,
-  }
+  merchandise2:[MerchandiseSchema],
 });
 
 UserSchema.set("toJSON", {

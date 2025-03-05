@@ -259,7 +259,6 @@ function UserDatabaseMongoDB(dbConnectionString) {
     }
     else{
       merchandise = await this.addMerchToArray(email, size, color);
-      console.log(merchandise);
       const len = merchandise.merchandise2.length;
       return merchandise.merchandise2[len-1]._id;
     }

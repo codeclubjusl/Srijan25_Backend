@@ -147,7 +147,13 @@ function MerchController(database) {
           message: "email not found",
         });
       }
-      const {phone,id} = await getUserByEmail(email);
+      const {data} = await getUserByEmail(email);
+      if(!data){
+        return res.status(CONST.httpStatus.BAD_REQUEST).json({
+          message: "user not found",
+        });
+      }
+      const {id,phone} = data;
       // if (merchandise) {
       //   return res.status(CONST.httpStatus.BAD_REQUEST).json({
       //     message: "merch already added",

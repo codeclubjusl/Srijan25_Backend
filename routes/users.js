@@ -365,11 +365,11 @@ router.get(
     isUserAuthenticated,
     merchController.getMerchant
 );
-router.post(
-    "/users/merchandise",
-    isUserAuthenticated,
-    merchController.bookMerchant
-);
+// router.post(
+//     "/users/merchandise",
+//     isUserAuthenticated,
+//     merchController.bookMerchant
+// );
 
 router.get("/users/:id", isUserAuthenticated, userController.getUserById);
 router.delete("/users/:id", isUserAuthenticated, userController.deleteUserById);

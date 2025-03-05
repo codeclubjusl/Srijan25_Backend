@@ -147,7 +147,7 @@ function MerchController(database) {
           message: "email not found",
         });
       }
-      const {phone} = await getUserByEmail(email);
+      const {phone,id} = await getUserByEmail(email);
       // if (merchandise) {
       //   return res.status(CONST.httpStatus.BAD_REQUEST).json({
       //     message: "merch already added",
@@ -163,8 +163,8 @@ function MerchController(database) {
       }
 
       // adding merch to backend
-      const id = await this.database.pushMerchToUser(email, size, color);
-      if(!id){
+      const merchID = await this.database.pushMerchToUser(email, size, color);
+      if(!merchID){
         console.error("error adding merchandise to database!!!!");
         return res.status(CONST.httpStatus.INTERNAL_ERROR).json({
           message: "unable to add merch to database",
@@ -177,7 +177,7 @@ function MerchController(database) {
       //email_phone_nameOnshirt_size_Color
 
       // add phone number
-      const fileName = `${email}_${nameOnShirt}_${size}_${color}_${id.toString()}_${phone}.${fileExtension}`;
+      const fileName = `${email}_${nameOnShirt}_${size}_${color}_${id.toString()}_${merchID.toString()}_${phone}.${fileExtension}`;
 
       const params = {
         Bucket: bucketName,

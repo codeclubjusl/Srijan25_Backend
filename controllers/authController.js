@@ -10,10 +10,14 @@ function AuthController(database, logger) {
   const otpGenerator = require("otp-generator");
   const cloudinary = require("cloudinary");
 
-  this.getUserSession = BigPromise((req, res, next) => {
+  this.getUserSession = BigPromise(async (req, res, next) => {
     console.log("Inside getUserSession");
     const jwtToken = req.cookies.jwt;
     let authData = jwtUtil.decodeJWT(jwtToken);
+    const id = authData.id;
+    const user = await this.database.getUserById(id);
+    authData.user = user;
+    console.log(authData);
     res.json({ sid: authData });
   });
 
@@ -92,8 +96,10 @@ function AuthController(database, logger) {
     this.logger.info(`Session started for user [${user.email}]`);
 
     let authData = {
-      id: user._id,
+      user: user.toJSON(),
     };
+    delete authData.user.password;
+    delete authData.user.providers;
     res.json({ sid: authData });
   });
 
@@ -134,7 +140,11 @@ function AuthController(database, logger) {
     let authData = {
       id: createdUser.id,
       providerId: null,
+      user: createdUser,
     };
+
+    delete authData.user.password;
+    delete authData.user.providers;
 
     res
       .status(CONST.httpStatus.CREATED)

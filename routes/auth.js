@@ -3,7 +3,7 @@ const fileUpload = require("express-fileupload")
 const router = express.Router()
 const authController = require("../controllers/authController")
 const middlewares = require("../middlewares")
-
+const adminController = require("../controllers/adminController")
 // router.use(
 //   fileUpload({
 //     useTempFiles: true,
@@ -21,6 +21,9 @@ router.put("/updateDetails", middlewares.isUserAuthenticated, authController.upd
 router.post("/logout", authController.logout);
 router.put("/changePassword", authController.changePassword);
 router.post("/addReferral", middlewares.isUserAuthenticated, authController.addReferral);
+router.post("/adminLogin", adminController.superUserLogin);
+router.post("/adminRegister", adminController.superUserRegister);
+router.post("/adminFetchEvents", adminController.fetchEventDetails);
 
 const passport = require("passport")
 passport.debug = true;

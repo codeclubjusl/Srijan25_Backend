@@ -16,8 +16,8 @@ const OAuthProviders = {
 
 const maxAgeCookieExpired = 1 * 24 * 60 * 60 * 1000
 const merchandiseTypes = {
-  size: ['XS','S', 'M', "L", "XL", "XXL", "XXXL"],
-  color: ['Black', 'White']
+  size: ['XS', 'S', 'M', "L", "XL", "XXL", "XXXL"],
+  color: ['Black', 'White', 'white', 'black']
 }
 const paymentStatus = [
   "pending", "accepted", "rejected",

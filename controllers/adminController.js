@@ -5,7 +5,7 @@ function AdminController() {
   const jwt = require("jsonwebtoken");
 
   this.superUserLogin = async (req, res, next) => {
-    console.log("Super User Login");
+    // console.log("Super User Login");
     const { username, password } = req.body;
     const user = await AdminUser.findOne({ username });
     if (!user) return res.status(400).json({ message: "User not found" });

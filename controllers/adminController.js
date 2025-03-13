@@ -69,17 +69,29 @@ function AdminController() {
               })
               .populate({
                 path: "participantGroups",
-                populate: {
-                  path: "members.user",
-                  select: "name email phone",
-                },
+                populate: [
+                  {
+                    path: "members.user",
+                    select: "name email phone",
+                  },
+                  {
+                    path: "creator",
+                    select: "name email phone",
+                  },
+                ],
               })
               .populate({
                 path: "pendingParticipantGroups",
-                populate: {
-                  path: "members.user",
-                  select: "name email phone",
-                },
+                populate: [
+                  {
+                    path: "members.user",
+                    select: "name email phone",
+                  },
+                  {
+                    path: "creator",
+                    select: "name email phone",
+                  },
+                ],
               })
           : await Event.find()
               .populate({
@@ -88,17 +100,29 @@ function AdminController() {
               })
               .populate({
                 path: "participantGroups",
-                populate: {
-                  path: "members.user",
-                  select: "name email phone",
-                },
+                populate: [
+                  {
+                    path: "members.user",
+                    select: "name email phone",
+                  },
+                  {
+                    path: "creator",
+                    select: "name email phone",
+                  },
+                ],
               })
               .populate({
                 path: "pendingParticipantGroups",
-                populate: {
-                  path: "members.user",
-                  select: "name email phone",
-                },
+                populate: [
+                  {
+                    path: "members.user",
+                    select: "name email phone",
+                  },
+                  {
+                    path: "creator",
+                    select: "name email phone",
+                  },
+                ],
               });
 
       if (!event) {

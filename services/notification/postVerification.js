@@ -31,17 +31,11 @@ const addNotification = async (userId,isVerified)=>{
 const sendBulkMessage = async ()=>{
   const details = [
     {
-      email: "pandeyrahul.work@gmail.com",
+      email: "test@gmail.com",
       isVerified: true,
       size: "M",
       color:'Black'
-    },
-    {
-      email: "pandeyrahul.work@gmail.com",
-      isVerified: false,
-      size: "M",
-      color:'White'
-    },
+    }
   ];
 
   details.forEach(async (user) => {

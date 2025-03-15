@@ -153,12 +153,22 @@ function MerchController(database) {
           message: "user not found",
         });
       }
-      const {id,phone} = data;
+      const {id,phone, merchandise, merchandise2} = data;
       // if (merchandise) {
       //   return res.status(CONST.httpStatus.BAD_REQUEST).json({
       //     message: "merch already added",
       //   });
       // }
+      let count = 0;
+
+      if(merchandise) count++;
+      if(merchandise2) count+=merchandise2.length;
+
+      if(count >=4 ){
+        return res.status(CONST.httpStatus.BAD_REQUEST).json({
+          message: "purchase limit exceeded",
+        });
+      }
 
       const image = req.file;
       // console.log(image, nameOnShirt, college, department, year);
@@ -167,6 +177,7 @@ function MerchController(database) {
           message: "No file uploaded",
         });
       }
+
 
       // adding merch to backend
       const merchID = await this.database.pushMerchToUser(email, size, color);

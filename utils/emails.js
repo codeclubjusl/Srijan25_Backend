@@ -60,20 +60,18 @@ const sendPaymentVerifiedMail = (recipientMail, isVerified, color, size) => {
   }
   const body = {
     verified:`
-    Hi, We’ve confirmed your payment for Srijan Merchandise. Your order is now being processed and will be shipped shortly.
+  Hi, We’ve confirmed your payment for Srijan Merchandise. Your order is now being processed and will be shipped shortly.
 
-  Team ,
-  Srijan
+  Team Srijan
     `,
     notVerfied:`
-    Hi, We noticed your payment for the merchandise order is still pending. Unfortunately, we couldn’t verify the transaction in our records.  
+  Hi, We noticed your payment for the merchandise order is still pending. Unfortunately, we couldn’t verify the transaction in our records.  
 
 What to do next:  
 1. Check if the payment was deducted from your account.  
 2. If yes, share a screenshot of the UPI payment confirmation (with transaction ID and timestamp). Reply to this email or contact your Merchandise POC to whom you sent the transaction.
 
-  Team ,
-  Srijan
+  Team Srijan
     `
   }
   const mailOptions = {

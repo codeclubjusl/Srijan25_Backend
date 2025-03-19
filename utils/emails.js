@@ -1,4 +1,5 @@
 const nodemailer = require('nodemailer');
+const { paymentStatus } = require('./constants');
 //const { render } = require('@react-email/components')
 
 const transporter = nodemailer.createTransport({
@@ -11,12 +12,13 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-const sendPaymentRecievedMail = (recipientMail, nameOnShirt, size, color) => {
+const sendPaymentRecievedMail = (recipientMail, nameOnShirt, size, color, paymentStatus) => {
+  const copyStatus=paymentStatus;
   const mailOptions = {
     from: process.env.SMTP_USER,
     to: recipientMail,
-    subject: "Payment Verification in Progress",
-    text: `Dear Customer,
+    subject: `Payment Verification : ${copyStatus}`,
+    text: `Dear User,
 
 We have received your payment request and are currently verifying it. Here are the details of your order:
 
@@ -29,7 +31,8 @@ We will update you once the verification is complete.
 Thank you for your patience!
 
 Best regards,
-Srijan 2025`,
+Team Srijan 2025,
+Jadavpur University`,
   };
 
   console.log("Sending email to:", recipientMail);
@@ -38,6 +41,11 @@ Srijan 2025`,
     if (error) {
       console.error("Error sending email to", recipientMail, ":", error);
     } else {
+      notificationService.addNotificationToUser(
+        userId,
+        `Merchandise Order Details : For Size ${size} Color ${color}`,
+        `Your Merchandise has been successfully registered! Payment Verification is ${copyStatus}.`
+    );
       console.log("Email sent successfully to", recipientMail, ":", info.response);
     }
   });

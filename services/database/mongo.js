@@ -241,6 +241,28 @@ function UserDatabaseMongoDB(dbConnectionString) {
       { new: true, runValidator: true }
     );
   };
+  this.addMerchToArray = (email, size, color) => {
+    return User.findOneAndUpdate(
+      {
+        email: email,
+      },
+      {$push:{merchandise2: { size, color, status: "pending", }}},
+      { new: true, runValidator: true }
+    );
+  }
+  this.pushMerchToUser = async (email, size, color) =>{
+    const data = await User.findOne({email: email}, {merchandise:1, merchandise2:1});
+    let merchandise;
+    if(!data.merchandise){
+      merchandise = await this.addMerchToUser(email, size, color);
+      return merchandise.merchandise._id;
+    }
+    else{
+      merchandise = await this.addMerchToArray(email, size, color);
+      const len = merchandise.merchandise2.length;
+      return merchandise.merchandise2[len-1]._id;
+    }
+  }
 }
 
 module.exports = UserDatabaseMongoDB;

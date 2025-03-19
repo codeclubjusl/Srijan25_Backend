@@ -11,12 +11,12 @@ function MerchController(database) {
   this.getMerchant = BigPromise(async (req, res, next) => {
     const jwtToken = req.cookies.jwt;
     const { email } = decodeJWT(jwtToken);
-    const { merchandise } = await this.database.getUserByEmail(email);
+    const { merchandise,merchandise2 } = await this.database.getUserByEmail(email);
     if (merchandise) {
       res.status(CONST.httpStatus.OK);
       res.json({
         success: true,
-        merchandise: merchandise
+        merchandise:  merchandise
       });
     }
     else {
@@ -73,19 +73,6 @@ function MerchController(database) {
       }
     }
   });
-  this.testing = async (req, res, next) => {
-    const option = {
-      email: "test@gmail.com",
-      subject: "hello",
-      message: "hello world"
-    }
-    await emailHelper(option);
-    res.status(CONST.httpStatus.CREATED);
-    res.json({
-      success: true,
-      message: "done"
-    })
-  }
   this.getQRImage = async (req, res, next) => {
     try {
       /*
@@ -150,34 +137,64 @@ function MerchController(database) {
         college,
         department,
         year,
-        email, size, color
+        size, color
       } = req.body;
 
-      /*
       const jwtToken = req.cookies.jwt;
-      const { email: dbEmail } = decodeJWT(jwtToken);
-      const { merchandise, phone } = await this.database.getUserByEmail(email);
-      if (merchandise) {
+      const { email } = decodeJWT(jwtToken);
+      if (!email) {
         return res.status(CONST.httpStatus.BAD_REQUEST).json({
-          message: "merch already added",
+          message: "email not found",
         });
       }
-      */
+      const {data} = await getUserByEmail(email);
+      if(!data){
+        return res.status(CONST.httpStatus.BAD_REQUEST).json({
+          message: "user not found",
+        });
+      }
+      const {id,phone, merchandise, merchandise2} = data;
+      // if (merchandise) {
+      //   return res.status(CONST.httpStatus.BAD_REQUEST).json({
+      //     message: "merch already added",
+      //   });
+      // }
+      let count = 0;
+
+      if(merchandise) count++;
+      if(merchandise2) count+=merchandise2.length;
+
+      if(count >=4 ){
+        return res.status(CONST.httpStatus.BAD_REQUEST).json({
+          message: "purchase limit exceeded",
+        });
+      }
 
       const image = req.file;
-      console.log(image, nameOnShirt, college, department, year);
+      // console.log(image, nameOnShirt, college, department, year);
       if (!image) {
         return res.status(CONST.httpStatus.BAD_REQUEST).json({
           message: "No file uploaded",
         });
       }
 
+
+      // adding merch to backend
+      const merchID = await this.database.pushMerchToUser(email, size, color);
+      if(!merchID){
+        console.error("error adding merchandise to database!!!!");
+        return res.status(CONST.httpStatus.INTERNAL_ERROR).json({
+          message: "unable to add merch to database",
+        });
+      }
+      console.log(`added merchandise in db for ${email}`);
+
       // Extract file extension
       const fileExtension = image.originalname.split('.').pop();
       //email_phone_nameOnshirt_size_Color
 
       // add phone number
-      const fileName = `${email}_${nameOnShirt}_${size}_${color}.${fileExtension}`;
+      const fileName = `${email}_${nameOnShirt}_${size}_${color}_${id.toString()}_${merchID.toString()}_${phone}.${fileExtension}`;
 
       const params = {
         Bucket: bucketName,
@@ -211,6 +228,7 @@ const { transport } = require("winston");
 const { checkDiscountAvailable } = require("../services/database/payment");
 const { isVAT } = require("validator");
 const { sendPaymentRecievedMail } = require("../utils/emails");
+const { getUserByEmail } = require("../services/database/users");
 const merchController = new MerchController(database)
 
 module.exports = merchController

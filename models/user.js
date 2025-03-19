@@ -5,6 +5,8 @@ const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const CONST = require("../utils/constants");
 const NotificationSchema = require("./notification");
+const MerchandiseSchema = require("./merchandise");
+
 const UserSchema = new Schema({
   id: {
     type: ObjectId,
@@ -126,22 +128,10 @@ const UserSchema = new Schema({
   },
   notifications: [NotificationSchema],
   merchandise: {
-    type: new Schema({
-      size: {
-        type: String,
-        enum: CONST.merchandiseTypes.size,
-      },
-      color: {
-        type: String,
-        enum: CONST.merchandiseTypes.color,
-      },
-      status: {
-        type: String,
-        enum: CONST.paymentStatus,
-      }
-    }),
+    type: MerchandiseSchema,
     default: null,
   },
+  merchandise2:[MerchandiseSchema],
 });
 
 UserSchema.set("toJSON", {

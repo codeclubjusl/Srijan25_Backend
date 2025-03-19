@@ -279,7 +279,7 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
                 await addRegisteredEventToUser(userId, event._id);
                 notificationService.addNotificationToUser(
                     userId,
-                    `Registered to an ${event.name}`,
+                    `Registered to ${event.name}`,
                     `Your team ${group.name} has been successfully registered to the ${event.name}. `
                 );
             } else {
@@ -294,7 +294,7 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
                 for (const member of group.members) {
                     notificationService.addNotificationToUser(
                         member.user,
-                        `Registered to an ${event.name}`,
+                        `Registered to ${event.name}`,
                         `Your were added to team ${group.name} for ${event.name}. 
                         Please complete the invitation at your earliest convenience.`
                     );
@@ -306,7 +306,7 @@ router.post("/:slug/register", isUserAuthenticated, async (req, res) => {
                     // putting notification 
                     notificationService.addNotificationToUser(
                         member.user,
-                        "Inviation",
+                        "Invitation",
                         `You were invited to team ${group.name} for ${event.name}`
                     );
                 }

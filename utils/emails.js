@@ -61,7 +61,44 @@ const options = {
   html: emailHtml,
 };
 */
+const sendPaymentVerifiedMail = (recipientMail, isVerified, color, size) => {
+  const subject = {
+    verified: "Payment Recieved : Order Confirmed for Merchandise !",
+    notVerfied:"Payment not confirmed for srijan merchandise"
+  }
+  const body = {
+    verified:`
+  Hi, We’ve confirmed your payment for Srijan Merchandise. Your order is now being processed and will be shipped shortly.
 
+  Team Srijan
+    `,
+    notVerfied:`
+  Hi, We noticed your payment for the merchandise order is still pending. Unfortunately, we couldn’t verify the transaction in our records.  
+
+What to do next:  
+1. Check if the payment was deducted from your account.  
+2. If yes, share a screenshot of the UPI payment confirmation (with transaction ID and timestamp). Reply to this email or contact your Merchandise POC to whom you sent the transaction.
+
+  Team Srijan
+    `
+  }
+  const mailOptions = {
+    from: process.env.SMTP_USER,
+    to: recipientMail,
+    subject: isVerified? subject.verified : subject.notVerfied ,
+    text: isVerified? body.verified : body.notVerfied ,
+  };
+
+  console.log("Sending email to:", recipientMail);
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.error("Error sending email to", recipientMail, ":", error);
+    } else {
+      console.log("Email sent successfully to", recipientMail, ":", info.response);
+    }
+  });
+};
 //await transporter.sendMail(options);
-module.exports = { sendPaymentRecievedMail };
+module.exports = { sendPaymentRecievedMail , sendPaymentVerifiedMail};
 

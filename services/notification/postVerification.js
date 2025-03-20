@@ -30,16 +30,10 @@ const addNotification = async (userId,isVerified)=>{
 
 const sendBulkMessage = async ()=>{
   const details = [
-    {
-      email: "test@gmail.com",
-      isVerified: true,
-      size: "M",
-      color:'Black'
-    }
   ];
 
-  details.forEach(async (user) => {
-    console.log(`--- sending notification to ${user.email} ---`)
+  for(let user of details){
+    console.log(`\n\n--- sending notification to ${user.email} ---`)
     try {
       const { data } = await getUserByEmail(user.email);
       await updateUserMerchandise(data.id, user.size, user.color, user.isVerified);
@@ -50,9 +44,23 @@ const sendBulkMessage = async ()=>{
       console.log(`error while adding notification for ${user.email}`)
     }
     sendPaymentVerifiedMail(user.email, user.isVerified);
-    console.log(`---- END ---`)
 
-  })
+  }
+  // details.forEach(async (user) => {
+  //   console.log(`--- sending notification to ${user.email} ---`)
+  //   try {
+  //     const { data } = await getUserByEmail(user.email);
+  //     await updateUserMerchandise(data.id, user.size, user.color, user.isVerified);
+  //     console.log(`added notification and updated status for ${user.email}`)
+  //   }
+  //   catch (err) {
+  //     //console.error(err);
+  //     console.log(`error while adding notification for ${user.email}`)
+  //   }
+  //   sendPaymentVerifiedMail(user.email, user.isVerified);
+  //   console.log(`---- END ---`)
+
+  // })
 }
 
 const updateUserMerchandise = async (userId,size, color, isVerified )=>{

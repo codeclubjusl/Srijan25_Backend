@@ -19,5 +19,19 @@ router.get("/getAll", isUserAuthenticated, async (req, res) => {
   res.status(200).json({ data: data });
 });
 
+router.get("/paginated", isUserAuthenticated,async (req, res) => {
+  const { page, limit} = await req.query;
+
+  const jwtToken = req.cookies.jwt;
+  const { email } = decodeJWT(jwtToken);
+  if(!email || page == undefined || limit ==undefined){
+    res.status(400).json({message:"invalid params"});
+  }
+
+  const data = await notificationService.paginatedListing(email,page,limit);
+
+  res.status(200).json({ data });
+});
+
 module.exports = router
 

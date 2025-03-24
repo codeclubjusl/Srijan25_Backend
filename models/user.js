@@ -79,6 +79,7 @@ const UserSchema = new Schema({
     type: String,
     default: "Jadavpur University",
   },
+  userInstitution: String,
   wishlist: {
     type: [
       {

@@ -399,71 +399,51 @@ function AuthController(database, logger) {
 
   this.updateDetails = BigPromise(async (req, res, next) => {
     try {
-      const { name, phone, merchandise, consent } = req.body;
-
+      const { name, phone, merchandise, consent, institution } = req.body;
+  
       const jwtToken = req.cookies.jwt;
       if (!jwtToken) {
         return res
           .status(CONST.httpStatus.UNAUTHORIZED)
           .json({ error: "No token provided" });
       }
+  
       const authData = jwtUtil.decodeJWT(jwtToken);
       if (!authData || !authData.email) {
         return res
           .status(CONST.httpStatus.UNAUTHORIZED)
           .json({ error: "Invalid or expired token" });
       }
-
+  
       let user = await this.database.getUserByEmail(authData.email);
       if (!user) {
         return res
           .status(CONST.httpStatus.NOT_FOUND)
           .json({ error: "User not found" });
       }
-
+  
       if (name) user.name = name;
       if (phone) user.phone = phone;
-      if (consent !== undefined) user.consent = consent; 
-
+      if (consent !== undefined) user.consent = consent;
+      if (institution) user.userInstitution = institution; // Update institution field
+  
       if (merchandise) {
-        if (!user.merchandise) user.merchandise = {}; 
+        if (!user.merchandise) user.merchandise = {};
         if (merchandise.size) user.merchandise.size = merchandise.size;
         if (merchandise.color) user.merchandise.color = merchandise.color;
       }
-
-      if (req.files && req.files.photo) {
-        // Delete old Cloudinary image if not Google photo
-        if (user.photo.id && !user.photo.isGooglePhoto) {
-            await cloudinary.v2.uploader.destroy(user.photo.id);
-        }
-    
-        // Upload new photo to Cloudinary
-        const result = await cloudinary.v2.uploader.upload(
-            req.files.photo.tempFilePath,
-            {
-                folder: "users",
-                width: 150,
-                crop: "scale",
-            }
-        );
-    
-        // Update user photo details
-        user.photo.url = result.secure_url;
-        user.photo.id = result.public_id;
-        user.photo.isGooglePhoto = false; 
-    }
-
+  
       await user.save();
-
+  
       res.status(200).json({
         success: true,
         message: "User details updated successfully",
         user: {
           name: user.name,
           phone: user.phone,
-          photourl: user.photo.url,
           consent: user.consent,
           merchandise: user.merchandise,
+          institution: user.userInstitution, 
         },
       });
     } catch (error) {
@@ -472,7 +452,7 @@ function AuthController(database, logger) {
         .status(CONST.httpStatus.INTERNAL_SERVER_ERROR)
         .json({ error: "Something went wrong" });
     }
-  });
+  });  
 }
 
 const logger = require("../services/log/logger");

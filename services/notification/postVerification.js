@@ -31,7 +31,6 @@ const addNotification = async (userId,isVerified)=>{
 const sendBulkMessage = async ()=>{
   const details = [
   ];
-
   for(let user of details){
     console.log(`\n\n--- sending notification to ${user.email} ---`)
     try {

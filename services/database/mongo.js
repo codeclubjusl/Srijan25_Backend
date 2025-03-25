@@ -218,6 +218,7 @@ function UserDatabaseMongoDB(dbConnectionString) {
             picture,
           },
         },
+        $set: { emailVerified: true },
       },
       {
         new: true,

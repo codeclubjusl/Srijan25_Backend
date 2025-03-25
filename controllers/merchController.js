@@ -153,12 +153,12 @@ function MerchController(database) {
           message: "user not found",
         });
       }
-      const {id,phone, merchandise, merchandise2} = data;
-      // if (merchandise) {
-      //   return res.status(CONST.httpStatus.BAD_REQUEST).json({
-      //     message: "merch already added",
-      //   });
-      // }
+      const {id,phone, merchandise, merchandise2, emailVerified} = data;
+      if (!emailVerified) {
+        return res.status(CONST.httpStatus.BAD_REQUEST).json({
+          message: "email not verified",
+        });
+      }
       let count = 0;
 
       if(merchandise) count++;

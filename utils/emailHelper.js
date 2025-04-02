@@ -16,7 +16,8 @@ const mailHelper = async (options) =>{
         from: process.env.SMTP_USER, 
         to: options.email, 
         subject: options.subject, 
-        text: options.message, 
+        text: options.text,
+        html: options.html, 
     }
     
     await transporter.sendMail(message);

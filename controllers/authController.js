@@ -244,7 +244,11 @@ function AuthController(database, logger) {
     console.log("hello");
     const myUrl = `${process.env.FRONT_HOST}:${process.env.FRONT_PORT}/reset-password/${forgotToken}`;
 
-    const message = `Open the Link to reset your password for Srijan 2025 \n\n ${myUrl}`;
+    const message = `Open the link below to reset your password for Srijan 2025:
+    
+    ${myUrl}
+    
+    If you can't click the link, copy and paste it into your browser.`;    
 
     try {
       await mailHelper({

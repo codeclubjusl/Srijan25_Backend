@@ -242,9 +242,9 @@ function AuthController(database, logger) {
     const forgotToken = user.getForgotPasswordToken();
     await user.save({ validateBeforeSave: false });
     console.log("hello");
-    const myUrl = `http://${process.env.FRONT_HOST}:${process.env.FRONT_PORT}/reset-password/${forgotToken}`;
+    const myUrl = `${process.env.FRONT_HOST}:${process.env.FRONT_PORT}/reset-password/${forgotToken}`;
 
-    const message = `Copy paste this link in ur URL and hit enter \n\n ${myUrl}`;
+    const message = `Open the Link to reset your password for Srijan 2025 \n\n ${myUrl}`;
 
     try {
       await mailHelper({

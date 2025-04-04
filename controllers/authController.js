@@ -38,7 +38,7 @@ function AuthController(database, logger) {
       await mailHelper({
         email: user.email,
         subject: "Srijan 2025: OTP Verification",
-        message: `Your OTP for Email Verification is ${otp}`,
+        text: `Your OTP for Email Verification is ${otp}`,
       });
 
       console.log(`OTP sent successfully to ${user.email}`);

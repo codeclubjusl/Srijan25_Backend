@@ -137,7 +137,7 @@ function MerchController(database) {
         college,
         department,
         year,
-        size, color
+        size, color,contact, campus
       } = req.body;
 
       const jwtToken = req.cookies.jwt;
@@ -194,7 +194,7 @@ function MerchController(database) {
       //email_phone_nameOnshirt_size_Color
 
       // add phone number
-      const fileName = `${email}_${nameOnShirt}_${size}_${color}_${id.toString()}_${merchID.toString()}_${phone}.${fileExtension}`;
+      const fileName = `${email}_${nameOnShirt}_${size}_${color}_${id.toString()}_${merchID.toString()}_${contact}_${campus}.${fileExtension}`;
 
       const params = {
         Bucket: bucketName,

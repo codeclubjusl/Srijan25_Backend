@@ -23,7 +23,8 @@ router.put("/changePassword", authController.changePassword);
 router.post("/addReferral", middlewares.isUserAuthenticated, authController.addReferral);
 router.post("/adminLogin", adminController.superUserLogin);
 router.post("/adminRegister", adminController.superUserRegister);
-router.post("/adminFetchEvents", adminController.fetchEventDetails);
+router.post("/adminFetchEvents", adminController.fetchEventNames);
+router.post("/adminFetchEventParticipants", adminController.fetchEventDetails);
 
 const passport = require("passport")
 passport.debug = true;
